@@ -3,3 +3,6 @@ vidify.db
 data/
 *.mp4
 *.jpg
+vidify-api
+vidify-worker
+.DS_Store

@@ -19,7 +19,7 @@ import (
 
 func main() {
 
-	// -- Database Setup --
+	// -- Database  --
 
 	db, err := sql.Open("sqlite3", "vidify.db")
 	if err != nil {
@@ -32,6 +32,8 @@ func main() {
 		user_id TEXT,
 		status TEXT,
 		source_path TEXT,
+		title TEXT,
+		description TEXT,
 		created_at DATETIME
 	
 	)`)
@@ -123,6 +125,12 @@ func main() {
 		defer dst.Close()
 		io.Copy(dst, file)
 
+		title := r.FormValue("title")
+		descirption := r.FormValue("description")
+		if title == "" {
+			title = header.Filename
+		}
+
 		// 4. Creating the job
 		job := routing.VideoJob{
 			ID:           fmt.Sprintf("vid-%d", time.Now().Unix()),
@@ -133,8 +141,8 @@ func main() {
 		}
 
 		_, err = db.Exec(
-			"INSERT INTO videos (id, user_id, status, source_path, created_at) VALUES (?, ?, ?, ?, ?)",
-			job.ID, job.UserID, "PENDING", job.SourcePath, job.CreatedAt,
+			"INSERT INTO videos (id, user_id, status, source_path, title, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			job.ID, job.UserID, "PENDING", job.SourcePath, title, descirption, job.CreatedAt,
 		)
 
 		// 5. Publish to RabbitMQ
@@ -145,7 +153,7 @@ func main() {
 			return
 		}
 
-		fmt.Fprintf(w, "Upload successful! Job %s created for %s", job.ID, header.Filename)
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 		fmt.Printf(" [API] Log: Received %s, published job%s\n", header.Filename, job.ID)
 
 	})
@@ -166,32 +174,159 @@ func main() {
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("./data"))))
 
 	http.HandleFunc("/gallery", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, status, source_path FROM videos ORDER BY created_at DESC")
+		rows, err := db.Query("SELECT id, status, title FROM videos ORDER BY created_at DESC")
 		if err != nil {
-			http.Error(w, "failed to query videos", http.StatusInternalServerError)
+			http.Error(w, "Failed to query videos", http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
 
-		// Start building simple HTML table
-		fmt.Fprint(w, "<html><body><h1>Vidify Video Gallery</h1><table border='1'>")
-		fmt.Fprint(w, "<tr><th>ID</th><th>Status</th><th>Action</th></tr>")
+		// Professional Header & Styling
+		fmt.Fprint(w, `
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; margin: 40px; background: #f4f7f6; }
+                table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+                th { background: #00adef; color: white; }
+                img { border-radius: 4px; background: #ddd; object-fit: cover; }
+                .btn { text-decoration: none; background: #00adef; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+                .status { font-weight: bold; text-transform: uppercase; font-size: 0.8em; padding: 4px 8px; border-radius: 12px; }
+                .completed { background: #e6fffa; color: #2c7a7b; }
+                .pending { background: #fffaf0; color: #9c4221; }
+            </style>
+        </head>
+        <body>
+            <h1>Vidify Library</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Preview</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>`)
 
 		for rows.Next() {
-			var id, status, SourcePath string
-			rows.Scan(&id, &status, &SourcePath)
+			var id, status, title string
+			rows.Scan(&id, &status, &title)
 
-			displayAction := "Processing..."
+			thumbURL := fmt.Sprintf("/data/%s_thumb.jpg", id)
+			statusClass := "pending"
 			if status == "COMPLETED" {
-				// Link to the processsed file now being served via the /data/ route
-				videoURL := fmt.Sprintf("/data/%s_processed.mp4", id)
-				displayAction = fmt.Sprintf("<a href='%s'>▶️ Watch</a>", videoURL)
+				statusClass = "completed"
 			}
 
-			fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td></tr>", id, status, displayAction)
+			displayAction := "---"
+			if status == "COMPLETED" {
+				displayAction = fmt.Sprintf("<a class='btn' href='/data/%s_processed.mp4'>Watch</a>", id)
+			}
+
+			deleteAction := fmt.Sprintf(`
+				<form action="/delete/%s" method="POST" style="display:inline;" onsubmit="return confirm('Delete this video?');">
+					<button type="submit" style="background:#ff4d4d; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">Delete</button>
+				</form>`, id)
+
+			// We use exactly 6 variables for the 6 %s placeholders below
+			fmt.Fprintf(w, `
+						<tr>
+				<td><img src="%s" width="160" height="90" onerror="this.src='https://via.placeholder.com/160x90?text=No+Preview'"></td>
+				<td>
+					<strong style="font-size: 1.2em;">%s</strong><br>
+					<a href="/edit/%s" style="font-size: 0.8em; color: #00adef; text-decoration: none;">Edit Title</a>
+				</td>
+				<td><span class="status %s">%s</span></td>
+				<td>%s %s</td> 
+			</tr>`,
+				thumbURL, title, id, statusClass, status, displayAction, deleteAction)
 		}
 
-		fmt.Fprint(w, "</table></body></html>")
+		fmt.Fprint(w, "</tbody></table></body></html>")
+	})
+
+	http.HandleFunc("/delete/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		id := filepath.Base(r.URL.Path)
+
+		_, err := db.Exec("DELETE FROM videos WHERE id = ?", id)
+		if err != nil {
+			log.Printf("DB Delete Error: %v", err)
+			http.Error(w, "Failed to delete record", http.StatusInternalServerError)
+			return
+		}
+
+		filesToDelete := []string{
+			filepath.Join("data", id+"_processed.mp4"),
+			filepath.Join("data", id+"_thumb.jpg"),
+		}
+
+		for _, f := range filesToDelete {
+			os.Remove(f)
+		}
+
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `
+			<html>
+			<head>
+				<style>
+					body { font-family: sans-serif; margin: 40px; background: #f4f7f6; text-align: center; }
+					.card { background: white; padding: 30px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
+					input, textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+					button { background: #00adef; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+				</style>
+			</head>
+			<body>
+				<h1>🚀 Upload to Vidify</h1>
+				<div class="card">
+					<form action="/upload" method="POST" enctype="multipart/form-data">
+						<input type="text" name="title" placeholder="Video Title" required>
+						<textarea name="description" placeholder="Description (optional)" rows="3"></textarea>
+						<input type="file" name="video" accept="video/*" required>
+						<button type="submit">Publish to Library</button>
+					</form>
+					<br><a href="/gallery">View Your Gallery →</a>
+				</div>
+			</body></html>
+		`)
+	})
+
+	http.HandleFunc("/edit/", func(w http.ResponseWriter, r *http.Request) {
+		id := filepath.Base(r.URL.Path)
+
+		if r.Method == http.MethodPost {
+			newTitle := r.FormValue("title")
+			_, err := db.Exec("UPDATE videos SET title = ? WHERE id = ?", newTitle, id)
+			if err != nil {
+				http.Error(w, "Failed to update", http.StatusInternalServerError)
+				return
+			}
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		var currentTitle string
+		db.QueryRow("SELECT title FROM videos WHERE id = ?", id).Scan(&currentTitle)
+
+		fmt.Fprintf(w, `
+			<html><body>
+				<h1>Edit Video Title</h1>
+				<form method="POST">
+					<input type="text" name="title" value="%s" style="padding:10px; width:300px;">
+					<button type="submit" style="padding:10px; background:#00adef; color:white; border:none;">Update Title</button>
+				</form>
+				<br><a href="/gallery">Cancel</a>
+			</body></html>
+		`, currentTitle)
 	})
 
 	fmt.Println("Vidify web server running on http://localhost:8080")
