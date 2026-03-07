@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vidify - {{.Type}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f4f7f9; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Inter', sans-serif; margin: 0; }
+        .auth-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
+        h2 { text-transform: capitalize; margin-bottom: 25px; color: #1a202c; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #00adef; }
+        .btn-auth { width: 100%; background: #00adef; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-auth:hover { background: #0081b3; }
+        .switch { margin-top: 20px; font-size: 0.9em; color: #718096; }
+        .switch a { color: #00adef; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <h2>{{.Type}}</h2>
+        <form action="/{{.Type}}" method="POST">
+            <input type="email" name="email" placeholder="Email Address" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" class="btn-auth">{{if eq .Type "login"}}Log In{{else}}Create Account{{end}}</button>
+        </form>
+        <div class="switch">
+            {{if eq .Type "login"}}
+                Don't have an account? <a href="/signup">Sign Up</a>
+            {{else}}
+                Already have an account? <a href="/login">Log In</a>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 module github.com/JerryG0311/Vidify
 
-go 1.24
+go 1.24.0
 
 require github.com/rabbitmq/amqp091-go v1.10.0
 
@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.3
 	github.com/mattn/go-sqlite3 v1.14.34
+	golang.org/x/crypto v0.48.0
 )
 
 require (
