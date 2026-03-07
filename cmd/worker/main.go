@@ -130,15 +130,18 @@ func handlerVideoJob(job routing.VideoJob) pubsub.AckType {
 	// Upload Processed Video
 	processedS3URL, _ := storage.UploadFileToS3(fmt.Sprintf("%s_processed.mp4", job.ID), outputLocal)
 	// Upload Thumbnail
-	thumbS3URL, _ := storage.UploadFileToS3(fmt.Sprintf("%s_thumb.jpg", job.ID), thumbLocal)
+	autoThumbURL, _ := storage.UploadFileToS3(fmt.Sprintf("%s_thumb.jpg", job.ID), thumbLocal)
 
-	// 6. Update Databse with the NEW S3 URLs
-	_, err = db.Exec(
-		"UPDATE videos SET status = ?, source_path = ?, thumbnail_url = ? WHERE ID = ?",
-		"COMPLETED", processedS3URL, thumbS3URL, job.ID,
-	)
+	query := `
+			UPDATE videos
+			SET status = 'COMPLETED',
+				source_path = ?,
+				thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), ?)
+			WHERE id = ?
+			`
+	_, err = db.Exec(query, processedS3URL, autoThumbURL, job.ID)
 	if err != nil {
-		log.Printf("Final DB Update Error: %v", err)
+		log.Printf("Final DB Updated Error: %v", err)
 	}
 
 	return pubsub.Ack

@@ -21,9 +21,13 @@ import (
 type VideoData struct {
 	ID           string
 	Title        string
-	Status       string
+	Description  string
+	Playlist     string
 	SourcePath   string
 	ThumbnailURL string
+	Views        int
+	CreatedAt    time.Time
+	Status       string
 }
 
 type GalleryPageData struct {
@@ -49,6 +53,8 @@ func main() {
 		thumbnail_url TEXT,
 		title TEXT,
 		description TEXT,
+		playlist	TEXT,
+		views INTEGER DEFAULT 0,
 		created_at DATETIME
 	
 	)`
@@ -134,60 +140,66 @@ func main() {
 	// 1. Parse the file from the request ("video" is the key used in the curl command)
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-
-		if r.Method != http.MethodPost {
-			http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		// --- 1. SHOW THE FORM (GET REQUEST) ---
+		if r.Method == http.MethodGet {
+			tmpl, err := template.ParseFiles("web/templates/upload.html")
+			if err != nil {
+				http.Error(w, "Upload template not found", http.StatusInternalServerError)
+				return
+			}
+			tmpl.Execute(w, nil)
 			return
 		}
 
-		title := r.FormValue("title")
-		description := r.FormValue("description")
+		// --- 2. PROCESS THE UPLOAD (POST REQUEST) ---
+		if r.Method == http.MethodPost {
+			// Optional: Increase max memory for large video uploads (32MB default -> 500MB)
+			r.ParseMultipartForm(500 << 20)
 
-		file, header, err := r.FormFile("video")
-		if err != nil {
-			http.Error(w, "Failed to get file", http.StatusBadRequest)
+			title := r.FormValue("title")
+			description := r.FormValue("description")
+			playlist := r.FormValue("playlist")
+
+			file, header, err := r.FormFile("video")
+			if err != nil {
+				http.Error(w, "Failed to get video file", http.StatusBadRequest)
+				return
+			}
+			defer file.Close()
+
+			if title == "" {
+				title = header.Filename
+			}
+
+			job := routing.VideoJob{
+				ID:           fmt.Sprintf("vid-%d", time.Now().Unix()),
+				SourcePath:   "",
+				TargetFormat: "mp4",
+				UserID:       "jerry_g",
+				CreatedAt:    time.Now(),
+			}
+
+			s3URL, err := storage.UploadToS3(header.Filename, file)
+			if err != nil {
+				http.Error(w, "Failed to upload video", http.StatusInternalServerError)
+				return
+			}
+			job.SourcePath = s3URL
+
+			// Save to Database
+			_, err = db.Exec(
+				"INSERT INTO videos (id, user_id, status, source_path, thumbnail_url, title, description, playlist, created_at, views) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				job.ID, job.UserID, "PENDING", job.SourcePath, "", title, description, playlist, job.CreatedAt, 0,
+			)
+
+			pubsub.PublishJSON(ch, routing.ExchangeVideoTopic, routing.VideoUploadKey, job)
+
+			// Return a 200 OK so the JavaScript knows the upload finished
+			w.WriteHeader(http.StatusOK)
 			return
 		}
-		defer file.Close()
 
-		if title == "" {
-			title = header.Filename
-		}
-
-		// Upload directly to S3 (No local 'data' folder needed)
-		log.Printf("Starting S3 upload for file: %s to bucket: %s", header.Filename, os.Getenv("S3_BUCKET_NAME"))
-		s3URL, err := storage.UploadToS3(header.Filename, file)
-		if err != nil {
-			log.Printf("S3 Upload Error: %v", err)
-			http.Error(w, "Failed to upload to cloud", http.StatusInternalServerError)
-			return
-		}
-
-		// 4. Creating the job
-		job := routing.VideoJob{
-			ID:           fmt.Sprintf("vid-%d", time.Now().Unix()),
-			SourcePath:   s3URL, // Now pointing to S3
-			TargetFormat: "mp4",
-			UserID:       "jerry_g",
-			CreatedAt:    time.Now(),
-		}
-
-		_, err = db.Exec(
-			"INSERT INTO videos (id, user_id, status, source_path, title, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			job.ID, job.UserID, "PENDING", job.SourcePath, title, description, job.CreatedAt,
-		)
-
-		// 5. Publish to RabbitMQ
-		err = pubsub.PublishJSON(ch, routing.ExchangeVideoTopic, routing.VideoUploadKey, job)
-		if err != nil {
-			log.Printf("Failed to publish: %v", err)
-			http.Error(w, "Failed to queue job", http.StatusInternalServerError)
-			return
-		}
-
-		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
-		fmt.Printf(" [API] Log: Received %s, published job%s\n", header.Filename, job.ID)
-
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
 
 	http.HandleFunc("/status/", func(w http.ResponseWriter, r *http.Request) {
@@ -206,7 +218,8 @@ func main() {
 	http.Handle("/data/", http.StripPrefix("/data/", http.FileServer(http.Dir("./data"))))
 
 	http.HandleFunc("/gallery", func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, status, title, source_path, thumbnail_url FROM videos ORDER BY created_at DESC")
+		rows, err := db.Query("SELECT id, status, title, playlist, source_path, thumbnail_url, views FROM videos ORDER BY created_at DESC")
+
 		if err != nil {
 			log.Printf("Query error: %v", err)
 			http.Error(w, "Failed to query videos", http.StatusInternalServerError)
@@ -218,13 +231,18 @@ func main() {
 		for rows.Next() {
 			var v VideoData
 			var thumb sql.NullString
-			err := rows.Scan(&v.ID, &v.Status, &v.Title, &v.SourcePath, &thumb)
+			var playlist sql.NullString
+			err := rows.Scan(&v.ID, &v.Status, &v.Title, &playlist, &v.SourcePath, &thumb, &v.Views)
 			if err != nil {
-				log.Printf("Scan error: %v", err)
 				continue
 			}
 
 			// Check if the db actually had a string
+			if playlist.Valid {
+				v.Playlist = playlist.String
+			} else {
+				v.Playlist = ""
+			}
 			if thumb.Valid && thumb.String != "" {
 				v.ThumbnailURL = thumb.String
 			} else {
@@ -239,7 +257,7 @@ func main() {
 		tmpl, err := template.ParseFiles("web/templates/gallery.html")
 		if err != nil {
 			log.Printf("Template error: %v", err)
-			http.Error(w, "Template not found", http.StatusInternalServerError)
+			http.Error(w, "Gallery template not found", http.StatusInternalServerError)
 			return
 		}
 
@@ -248,39 +266,40 @@ func main() {
 	})
 
 	http.HandleFunc("/view/", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Path[len("/view/"):]
-		if id == "" {
+		id := filepath.Base(r.URL.Path)
+
+		// 1. Check if "?embed=true" is in the URL
+		isEmbed := r.URL.Query().Get("embed") == "true"
+
+		// 2. Increment views (only if NOT an embed, or keep it to track both)
+		db.Exec("UPDATE videos SET views = views + 1 WHERE id = ?", id)
+
+		var v VideoData
+		query := `SELECT id, title, description, playlist, source_path, thumbnail_url, views, created_at 
+				FROM videos WHERE id = ?`
+
+		err := db.QueryRow(query, id).Scan(
+			&v.ID, &v.Title, &v.Description, &v.Playlist, &v.SourcePath, &v.ThumbnailURL, &v.Views, &v.CreatedAt,
+		)
+
+		if err != nil {
 			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 			return
 		}
 
-		var v VideoData
-		var description sql.NullString // Use NullString to handle empty descriptions safely
-
-		// Fetch the data from your SQLite DB
-		err := db.QueryRow("SELECT id, title, source_path, thumbnail_url, description FROM videos WHERE id = ?", id).
-			Scan(&v.ID, &v.Title, &v.SourcePath, &v.ThumbnailURL, &description)
-
-		if err != nil {
-			log.Printf("View Error: %v", err)
-			http.Error(w, "Video not found", http.StatusNotFound)
-			return
-		}
-
-		// Set fallback thumbnail if it's missing
-		if v.ThumbnailURL == "" {
-			v.ThumbnailURL = fmt.Sprintf("https://%s.s3.us-east-2.amazonaws.com/%s_thumb.jpg", os.Getenv("S3_BUCKET_NAME"), v.ID)
-		}
-
-		// Load and execute the Watch template
 		tmpl, err := template.ParseFiles("web/templates/view.html")
 		if err != nil {
-			http.Error(w, "Template error", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Pass the video struct to the template
-		tmpl.Execute(w, v)
+		// 3. Create a map to pass both the Video and the Embed flag
+		data := map[string]interface{}{
+			"Video":   v,
+			"IsEmbed": isEmbed,
+		}
+
+		tmpl.Execute(w, data)
 	})
 
 	http.HandleFunc("/delete/", func(w http.ResponseWriter, r *http.Request) {
@@ -304,58 +323,60 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `
-			<html>
-			<head>
-				<style>
-					body { font-family: sans-serif; margin: 40px; background: #f4f7f6; text-align: center; }
-					.card { background: white; padding: 30px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
-					input, textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-					button { background: #00adef; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
-				</style>
-			</head>
-			<body>
-				<h1>🚀 Upload to Vidify</h1>
-				<div class="card">
-					<form action="/upload" method="POST" enctype="multipart/form-data">
-						<input type="text" name="title" placeholder="Video Title" required>
-						<textarea name="description" placeholder="Description (optional)" rows="3"></textarea>
-						<input type="file" name="video" accept="video/*" required>
-						<button type="submit">Publish to Library</button>
-					</form>
-					<br><a href="/gallery">View Your Gallery →</a>
-				</div>
-			</body></html>
-		`)
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 	})
 
 	http.HandleFunc("/edit/", func(w http.ResponseWriter, r *http.Request) {
+		// Extracts the ID from the URL path (e.g., /edit/vid-123 -> vid-123)
 		id := filepath.Base(r.URL.Path)
 
 		if r.Method == http.MethodPost {
+			// 1. Try to get title from Form (Standard) or Query String (AJAX)
 			newTitle := r.FormValue("title")
+			if newTitle == "" {
+				newTitle = r.URL.Query().Get("title")
+			}
+
+			// 2. Update only the title in the database
 			_, err := db.Exec("UPDATE videos SET title = ? WHERE id = ?", newTitle, id)
 			if err != nil {
-				http.Error(w, "Failed to update", http.StatusInternalServerError)
+				log.Printf("Inline edit error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+
+			// 3. Respond with 200 OK so the JavaScript knows the save was successful
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		var currentTitle string
-		db.QueryRow("SELECT title FROM videos WHERE id = ?", id).Scan(&currentTitle)
+		// If someone tries to GET this page manually, just send them back to the library
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+	})
 
-		fmt.Fprintf(w, `
-			<html><body>
-				<h1>Edit Video Title</h1>
-				<form method="POST">
-					<input type="text" name="title" value="%s" style="padding:10px; width:300px;">
-					<button type="submit" style="padding:10px; background:#00adef; color:white; border:none;">Update Title</button>
-				</form>
-				<br><a href="/gallery">Cancel</a>
-			</body></html>
-		`, currentTitle)
+	http.HandleFunc("/manage-thumb/", func(w http.ResponseWriter, r *http.Request) {
+		id := filepath.Base(r.URL.Path)
+		if r.Method == http.MethodPost {
+			action := r.FormValue("thumb_action")
+			var finalThumbURL string
+
+			switch action {
+			case "change":
+				file, header, err := r.FormFile("new_thumbnail")
+				if err == nil {
+					defer file.Close()
+					thumbName := fmt.Sprintf("%s_custom_%d%s", id, time.Now().Unix(), filepath.Ext(header.Filename))
+					finalThumbURL, _ = storage.UploadToS3(thumbName, file)
+				}
+			case "remove":
+				finalThumbURL = ""
+			default:
+				db.QueryRow("SELECT thumbnail_url FROM videos WHERE id = ?", id).Scan(&finalThumbURL)
+			}
+
+			db.Exec("UPDATE videos SET thumbnail_url = ? WHERE id = ?", finalThumbURL, id)
+		}
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 	})
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))

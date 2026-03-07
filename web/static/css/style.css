@@ -7,10 +7,19 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 40px
 .view-btn { background: #fff; border: 1px solid #ddd; padding: 8px 16px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
 .view-btn.active { background: #00adef; color: white; border-color: #00adef; }
 
-/* Table Styles */
+/* --- Table Styles (Updated) --- */
 table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
 th { text-align: left; padding: 10px 15px; color: #666; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
-td { background: white; padding: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; vertical-align: middle; }
+
+/* We added vertical-align: middle here to help the text cells */
+td { 
+    background: white; 
+    padding: 15px; 
+    border-top: 1px solid #eee; 
+    border-bottom: 1px solid #eee; 
+    vertical-align: middle; 
+}
+
 td:first-child { border-left: 1px solid #eee; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
 td:last-child { border-right: 1px solid #eee; border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
 
@@ -26,7 +35,38 @@ img { width: 160px !important; height: 90px !important; border-radius: 6px; obje
 .grid-view img { width: 100% !important; height: auto !important; aspect-ratio: 16/9; border-radius: 0; }
 
 /* Components */
-.btn { text-decoration: none; background: #00adef; color: white; padding: 8px 16px; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 5px; font-size: 0.9em; border: none; cursor: pointer; }
+.btn { 
+    text-decoration: none; 
+    background: #00adef; 
+    color: white; 
+    padding: 8px 16px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    display: inline-block; 
+    font-size: 0.9em; 
+    border: none; 
+    cursor: pointer; 
+    transition: opacity 0.2s;
+    white-space: nowrap; 
+}
+
+.btn:hover { opacity: 0.8; }
+
+.btn-danger { 
+    background: #e53e3e !important; 
+}
+
+/* Updated this to force vertical centering */
+.actions-cell { 
+    display: flex !important; 
+    gap: 10px; 
+    align-items: center; /* This centers them vertically in the flexbox */
+    justify-content: flex-start;
+    height: 90px; /* Matches the thumbnail height to ensure perfect centering */
+}
+
+.delete-form { margin: 0; padding: 0; display: flex; align-items: center; }
+
 .status { font-weight: bold; text-transform: uppercase; font-size: 0.7em; padding: 4px 10px; border-radius: 20px; }
 .completed { background: #e6fffa; color: #2c7a7b; }
 .pending { background: #fffaf0; color: #9c4221; }

@@ -5,56 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vidify Library</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background-color: #f4f7f9; margin: 0; font-family: 'Inter', sans-serif; }
+        
+        /* Header & Navigation */
+        .header-flex {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 30px 40px 10px 40px; margin-bottom: 10px;
+        }
+        h1 { margin: 0; font-size: 1.8em; color: #1a202c; font-weight: 800; }
+        
+        /* Controls Row */
+        .controls-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 40px 15px 40px;
+        }
+        .view-toggles { display: flex; gap: 10px; }
+        .view-btn { 
+            background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; 
+            border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600;
+        }
+        .view-btn.active { background: #00adef; color: #fff; border-color: #00adef; }
+
+        .btn-upload-sm {
+            background: #00adef; color: white; padding: 8px 16px; border-radius: 6px;
+            text-decoration: none; font-weight: 700; font-size: 0.85em; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-upload-sm:hover { background: #0081b3; }
+
+        /* --- Thumbnail FIX: Full Frame --- */
+        .thumb-column { width: 190px; }
+        .thumb-wrapper {
+            position: relative; width: 180px; height: 101px; 
+            border-radius: 8px; overflow: hidden; background: #000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .main-thumb { 
+            width: 100% !important; height: 100% !important; 
+            object-fit: cover !important; display: block; 
+        }
+
+        .play-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s ease; z-index: 2;
+        }
+        .thumb-wrapper:hover .play-overlay { background: rgba(0,0,0,0.4); }
+
+        /* Processing/Spinner */
+        .processing-box {
+            width:100%; height:100%; display:flex; align-items:center; 
+            justify-content:center; background:#2d3748; color:white; flex-direction:column; gap:8px;
+        }
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 3-Dots Menu */
+        .dots-container { position: absolute; top: 6px; right: 6px; z-index: 10; }
+        .dots-btn { 
+            background: rgba(0,0,0,0.5); border: none; border-radius: 50%; 
+            width: 22px; height: 22px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;
+        }
+        .dropdown-menu { 
+            display: none; position: absolute; right: 0; top: 26px; background: white; 
+            min-width: 140px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; border: 1px solid #edf2f7; 
+        }
+        .dropdown-menu button { 
+            display: block; width: 100%; padding: 10px 15px; text-align: left; 
+            border: none; background: none; font-size: 13px; cursor: pointer; color: #4a5568; 
+        }
+
+        /* Playlist & Title */
+        .playlist-badge {
+            display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 1px; color: #00adef; background: rgba(0, 173, 239, 0.1);
+            padding: 2px 8px; border-radius: 4px; margin-bottom: 6px;
+        }
+        .video-title-text {
+            cursor: pointer; border-bottom: 2px solid #00adef; 
+            display: inline-block; font-size: 1.1em; color: #1a202c; font-weight: 600;
+        }
+
+        /* --- List View Table --- */
+        #wrapper { padding: 0 40px 40px 40px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        th { text-align: left; padding: 15px 20px; background: #f8fafc; color: #a0aec0; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 20px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+
+        /* --- Grid View Styling --- */
+        .grid-view table, .grid-view thead, .grid-view tbody, .grid-view th, .grid-view td, .grid-view tr { display: block; }
+        .grid-view thead { display: none; }
+        .grid-view tbody { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; 
+            background: transparent;
+        }
+        .grid-view tr { 
+            background: white; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #edf2f7;
+        }
+        .grid-view .thumb-column { width: 100%; margin-bottom: 15px; }
+        .grid-view .thumb-wrapper { width: 100%; height: 150px; }
+
+        .action-icons { display: flex; gap: 18px; align-items: center; color: #718096; }
+        .icon-btn { background: none; border: none; cursor: pointer; color: inherit; padding: 4px; transition: 0.2s; }
+        .icon-btn:hover { color: #00adef; }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; position: relative; text-align: center; }
+    </style>
 </head>
-<body>
+<body class="list-view">
     <div class="header-flex">
-        <h1>My Library</h1>
+        <h1>Library</h1>
         <div class="search-container">
-            <input type="text" id="searchInput" onkeyup="filterVideos()" 
-                placeholder="Search videos by title..." class="search-bar">
+            <input type="text" id="searchInput" onkeyup="filterVideos()" placeholder="Search..." style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; width: 200px;">
         </div>
-        <div class="toggle-container">
+    </div>
+
+    <div class="controls-row">
+        <div class="view-toggles">
             <button class="view-btn active" id="listBtn" onclick="toggleView('list')">List</button>
             <button class="view-btn" id="gridBtn" onclick="toggleView('grid')">Grid</button>
         </div>
+        <a href="/upload" class="btn-upload-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Upload Video
+        </a>
     </div>
 
     <div id="wrapper">
         <table id="video-table">
             <thead>
-                <tr>
-                    <th>Preview</th>
-                    <th>Video Details</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
+                <tr><th>Video</th><th>Details</th><th>Actions</th></tr>
             </thead>
             <tbody>
                 {{range .Videos}}
-                <tr>
-                    <td>
-                        <img src="{{.ThumbnailURL}}" onerror="this.src='https://via.placeholder.com/160x90?text=Processing...'">
+                <tr class="video-row" data-id="{{.ID}}">
+                    <td class="thumb-column">
+                        <div class="thumb-wrapper">
+                            {{if eq .Status "COMPLETED"}}
+                                <img src="{{.ThumbnailURL}}" class="main-thumb">
+                                <a href="/view/{{.ID}}" class="play-overlay"><svg style="width:36px; fill:white;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></a>
+                            {{else}}
+                                <div class="processing-box"><div class="spinner"></div><span style="font-size:9px; font-weight:800;">PROCESSING</span></div>
+                            {{end}}
+                            
+                            <div class="dots-container">
+                                <button class="dots-btn" onclick="toggleMenu(event, '{{.ID}}')">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                                </button>
+                                <div id="menu-{{.ID}}" class="dropdown-menu">
+                                    {{if eq .Status "COMPLETED"}}
+                                    <button onclick="openThumbModal('{{.ID}}', '{{.ThumbnailURL}}')">Edit Thumbnail</button>
+                                    {{end}}
+                                    <form action="/delete/{{.ID}}" method="POST" onsubmit="return confirm('Delete video?');">
+                                        <button type="submit" style="color:#e53e3e">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <strong class="video-title-text">{{.Title}}</strong>
-                        <a href="/edit/{{.ID}}" class="edit-link">Edit Title</a>
+                        <div class="title-container">
+                            {{if .Playlist}}<div class="playlist-badge">{{.Playlist}}</div><br>{{end}}
+                            <strong class="video-title-text" id="title-display-{{.ID}}" onclick="enableEdit('{{.ID}}')">{{.Title}}</strong>
+                            <input type="text" id="title-input-{{.ID}}" value="{{.Title}}" style="display: none; padding: 4px; border: 1px solid #00adef; border-radius: 4px;" onkeydown="if(event.key === 'Enter') saveTitle('{{.ID}}')" onblur="saveTitle('{{.ID}}')">
+                            <div style="font-size:12px; color:#a0aec0; margin-top:8px; display:flex; align-items:center; gap:4px;">
+                                <svg style="width:12px; fill:currentColor;" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>
+                                {{.Views}} views
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <span class="status {{if eq .Status "COMPLETED"}}completed{{else}}pending{{end}}">
-                            {{.Status}}
-                        </span>
-                    </td>
-                    <td>
-                        {{if eq .Status "COMPLETED"}}
-                        <a class="btn" href="/view/{{.ID}}">Watch</a>
-                        <button class="btn share-btn" onclick="openShareModal('{{.Title}}', 'http://localhost:8080/view/{{.ID}}')">Share</button>
-                        <a class="btn save-btn" href="{{.SourcePath}}" download>Save</a>
-                        {{else}}
-                        ---
-                        {{end}}
-                        <form action="/delete/{{.ID}}" method="POST" class="delete-form" onsubmit="return confirm('Delete permanently?');">
-                            <button type="submit" class="delete-btn-text">Delete</button>
-                        </form>
+                        <div class="action-icons" {{if ne .Status "COMPLETED"}}style="opacity:0.3; pointer-events:none;"{{end}}>
+                            <button class="icon-btn" onclick="toggleLike(this, '{{.ID}}')"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+                            <button class="icon-btn" onclick="openShareModal('{{.Title}}', '{{.ID}}')"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg></button>
+                            <a href="{{.SourcePath}}" download class="icon-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>
+                        </div>
                     </td>
                 </tr>
                 {{end}}
@@ -64,30 +198,108 @@
 
     <div id="shareModal" class="modal-overlay">
         <div class="modal-content">
-            <button onclick="closeModal()" class="close-btn">&times;</button>
-            <h2 class="modal-header">🚀 Marketing & Share Tools</h2>
-            
-            <div class="modal-section">
-                <p class="section-label">Social Distribution</p>
-                <div class="social-grid">
-                    <a id="shareX" target="_blank" class="btn x-btn">X / Twitter</a>
-                    <a id="shareLI" target="_blank" class="btn li-btn">LinkedIn</a>
-                </div>
+            <button onclick="closeModal()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:24px; cursor:pointer; color:#a0aec0;">&times;</button>
+            <h2 style="margin-top:0; font-size: 1.3em;">Share Video</h2>
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                <a id="shareX" target="_blank" style="color:#000;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                <a id="shareFB" target="_blank" style="color:#1877F2;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+                <a id="shareLI" target="_blank" style="color:#0077b5;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/></svg></a>
             </div>
-
-            <div class="modal-section">
-                <p class="section-label">Marketing Assets</p>
-                <button class="btn embed-btn" onclick="copyEmbed()">Copy Embed Code (for Landing Pages)</button>
-                <button class="btn email-btn" onclick="copyEmailLink()">Copy Email Campaign Link</button>
-            </div>
-
-            <div class="modal-section">
-                <p class="section-label">Direct Asset URL</p>
-                <input type="text" id="shareUrlInput" readonly class="url-input">
-            </div>
+            <input type="text" id="shareUrlInput" readonly style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background:#f8fafc; font-size: 0.85em;">
+            <button id="copyBtn" onclick="copyShareToClipboard()" style="width:100%; background: #00adef; margin-top: 20px; padding: 10px; font-weight: 700; color: white; border: none; border-radius: 8px; cursor: pointer;">Copy to Clipboard</button>
         </div>
     </div>
 
-    <script src="/static/js/gallery.js"></script>
+    <div id="thumbModal" class="modal-overlay">
+        <div class="modal-content">
+            <button onclick="closeThumbModal()" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+            <h2 style="font-size:1.3em;">Thumbnail Manager</h2>
+            <img id="thumbPreview" src="" style="width:100%; border-radius:8px; margin:15px 0; border:1px solid #eee; object-fit: cover; aspect-ratio: 16/9;">
+            <form id="thumbForm" method="POST" enctype="multipart/form-data">
+                <div style="text-align:left; background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; font-size: 14px;">
+                    <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="keep" checked> Keep current</label>
+                    <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="remove"> Remove custom</label>
+                    <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="change"> Upload new</label>
+                    <input type="file" name="new_thumbnail" accept="image/*" style="margin-left:20px; margin-top:5px; font-size: 12px;">
+                </div>
+                <button type="submit" style="width:100%; background:#00adef; color:white; padding:10px; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleView(view) {
+            const wrapper = document.getElementById('wrapper');
+            const listBtn = document.getElementById('listBtn');
+            const gridBtn = document.getElementById('gridBtn');
+
+            if (view === 'grid') {
+                wrapper.classList.add('grid-view');
+                gridBtn.classList.add('active');
+                listBtn.classList.remove('active');
+            } else {
+                wrapper.classList.remove('grid-view');
+                listBtn.classList.add('active');
+                gridBtn.classList.remove('active');
+            }
+        }
+
+        function checkProcessing() {
+            if (document.querySelectorAll('.processing-box').length > 0) {
+                fetch(window.location.href).then(res => res.text()).then(html => {
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    if (doc.querySelectorAll('.processing-box').length < document.querySelectorAll('.processing-box').length) window.location.reload();
+                });
+            }
+        }
+        setInterval(checkProcessing, 3000);
+
+        function enableEdit(id) {
+            document.getElementById('title-display-' + id).style.display = 'none';
+            const input = document.getElementById('title-input-' + id);
+            input.style.display = 'inline-block';
+            input.focus();
+        }
+
+        function saveTitle(id) {
+            const newTitle = document.getElementById('title-input-' + id).value;
+            fetch('/edit/' + id + '?title=' + encodeURIComponent(newTitle), { method: 'POST' })
+                .then(res => { if(res.ok) window.location.reload(); });
+        }
+
+        function toggleMenu(event, id) {
+            event.stopPropagation();
+            const menu = document.getElementById(`menu-${id}`);
+            const isVisible = menu.style.display === 'block';
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            if (!isVisible) menu.style.display = 'block';
+        }
+        window.onclick = function() { document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none'); }
+
+        function openShareModal(title, id) {
+            const videoUrl = `${window.location.origin}/view/${id}`;
+            document.getElementById('shareModal').style.display = 'flex';
+            document.getElementById('shareUrlInput').value = videoUrl;
+            document.getElementById('shareX').href = `https://x.com/intent/tweet?url=${encodeURIComponent(videoUrl)}&text=${encodeURIComponent(title)}`;
+            document.getElementById('shareFB').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
+            document.getElementById('shareLI').href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`;
+        }
+        function closeModal() { document.getElementById('shareModal').style.display = 'none'; }
+        
+        function copyShareToClipboard() {
+            const input = document.getElementById('shareUrlInput');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            document.getElementById('copyBtn').innerText = "Copied!";
+            setTimeout(() => { document.getElementById('copyBtn').innerText = "Copy to Clipboard"; }, 2000);
+        }
+
+        function openThumbModal(id, url) {
+            document.getElementById('thumbModal').style.display = 'flex';
+            document.getElementById('thumbPreview').src = url;
+            document.getElementById('thumbForm').action = `/manage-thumb/${id}`;
+        }
+        function closeThumbModal() { document.getElementById('thumbModal').style.display = 'none'; }
+    </script>
 </body>
 </html>

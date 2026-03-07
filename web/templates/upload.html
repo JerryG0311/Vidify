@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload to Vidify</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background-color: #f4f7f9; margin: 0; font-family: 'Inter', sans-serif; }
+        .upload-card { 
+            max-width: 550px; 
+            margin: 60px auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+            text-align: center; 
+            position: relative;
+        }
+        h1 { color: #1a202c; font-size: 1.75em; margin-bottom: 30px; }
+        
+        .drop-zone { 
+            border: 2px dashed #cbd5e0; 
+            border-radius: 12px; 
+            padding: 40px 20px; 
+            cursor: pointer; 
+            background: #f8fafc; 
+            transition: all 0.2s ease; 
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            position: relative;
+        }
+        .drop-zone.drag-over { border-color: #00adef; background: #ebf8ff; }
+        .drop-zone svg { fill: #a0aec0; margin-bottom: 12px; }
+        .drop-zone p { color: #718096; font-size: 14px; margin: 0; }
+        
+        #clearFile {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #edf2f7;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            color: #718096;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 700; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        input[type="text"], textarea { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            box-sizing: border-box;
+            outline: none;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, textarea:focus { border-color: #00adef; }
+        textarea { height: 80px; resize: none; }
+
+        .btn-publish { 
+            width: 100%; padding: 14px; background: #00adef; color: white; border: none; 
+            border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn-publish:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+        .progress-wrapper { display: none; margin-top: 25px; }
+        .progress-container { height: 6px; background: #edf2f7; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #00adef; transition: width 0.3s ease; }
+        #status-msg { font-size: 13px; color: #4a5568; margin-top: 10px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="upload-card">
+        <h1>Upload to Vidify</h1>
+        
+        <form id="uploadForm">
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <button type="button" id="clearFile" onclick="resetUpload(event)">&times;</button>
+                <div id="dropZoneIcons">
+                    <svg viewBox="0 0 24 24" width="40" height="40"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                    <p id="fileLabel">Drag & drop your video or <b>browse</b></p>
+                </div>
+                <input type="file" id="fileInput" name="video" style="display:none">
+            </div>
+
+            <div class="input-group">
+                <label>Video Title</label>
+                <input type="text" name="title" id="titleInput" placeholder="Give your video a name" required>
+            </div>
+
+            <div class="input-group">
+                <label>Playlist Name</label>
+                <input type="text" name="playlist" id="playlistInput" placeholder="e.g. Summer Campaign, Tutorials, Demos">
+            </div>
+
+            <div class="input-group">
+                <label>Description</label>
+                <textarea name="description" id="descInput" placeholder="Tell viewers about your video..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn-publish" id="submitBtn">Publish Video</button>
+        </form>
+
+        <div class="progress-wrapper" id="pWrapper">
+            <div class="progress-container"><div class="progress-bar" id="pBar"></div></div>
+            <p id="status-msg">Preparing upload...</p>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const clearBtn = document.getElementById('clearFile');
+        const icons = document.getElementById('dropZoneIcons');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        fileInput.onchange = handleFileSelect;
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                icons.querySelector('svg').style.display = 'none';
+                fileLabel.innerHTML = `Ready: <span style="color:#1a202c; font-weight:700;">${file.name}</span>`;
+                clearBtn.style.display = 'block';
+                if (!document.getElementById('titleInput').value) {
+                    document.getElementById('titleInput').value = file.name.split('.').slice(0, -1).join('.');
+                }
+            }
+        }
+
+        function resetUpload(e) {
+            e.stopPropagation();
+            fileInput.value = '';
+            icons.querySelector('svg').style.display = 'block';
+            fileLabel.innerHTML = 'Drag & drop your video or <b>browse</b>';
+            clearBtn.style.display = 'none';
+            document.getElementById('titleInput').value = '';
+        }
+
+        document.getElementById('uploadForm').onsubmit = function(e) {
+            e.preventDefault();
+            if (!fileInput.files.length) return;
+
+            const formData = new FormData(this);
+            const xhr = new XMLHttpRequest();
+            const pWrapper = document.getElementById('pWrapper');
+            const statusMsg = document.getElementById('status-msg');
+
+            pWrapper.style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    document.getElementById('pBar').style.width = percent + '%';
+                    statusMsg.innerText = `Uploading... ${percent}%`;
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    statusMsg.innerText = "Upload successful! Loading library...";
+                    const timestamp = new Date().getTime();
+                    window.location.href = `/gallery?refresh=${timestamp}`;
+                } else {
+                    statusMsg.innerText = "Upload failed. Try again.";
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            };
+
+            xhr.open('POST', '/upload', true);
+            xhr.send(formData);
+        };
+    </script>
+</body>
+</html>
