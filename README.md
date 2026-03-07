@@ -10,6 +10,9 @@ Vidify is a high-performance, distributed video management platform that enables
   - Interactive gallery with Grid/List layout toggles.
   - Inline metadata editing and custom thumbnail management.
 
+## Motivation
+Managing video content is computationally expensive and traditionally slows down web applications. I built Vidify because I wanted to solve the "blocking problem" in standard web architectures. By decoupling the video upload and transcoding processes using a distributed worker system and RabbitMQ, I created a platform that remains snappy and responsive for the user, regardless of the processing load on the backend. This project allowed me to dive deep into asynchronous systems, cloud storage durability, and multi-user authentication.
+
 ## Tech Stack
 - **Backend:** Go (Golang)
 - **Database:** SQLite3
