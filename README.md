@@ -47,3 +47,43 @@ docker-compose up --build --scale worker=3
    ```bash
    docker-compose up --build
 4. Access the app at http://localhost:8080.
+
+
+## Contributing
+
+Contributions are welcome! If you would like to help improve Vidify, please follow these steps to get your local development environment running.
+
+### Clone the repo
+
+```bash
+git clone https://github.com/JerryG0311/Vidify
+cd Vidify
+```
+
+### Build and run for development
+
+The project is containerized to manage the Go environment, SQLite, and RabbitMQ dependencies automatically. Ensure you have Docker installed.
+
+```bash
+# Start all services in the background
+docker-compose up -d --build
+
+# Follow the API logs to see real-time interaction
+docker-compose logs -f api
+```
+
+### Run the test suite
+
+To ensure core logic remains stable after your changes, run the test suite from the root directory:
+
+```bash
+go test ./...
+```
+
+### Submit a pull request
+
+1. Fork the repository on GitHub.
+2. Create a feature branch: `git checkout -b feature/amazing-feature`.
+3. Commit your changes: `git commit -m 'feat: add amazing feature'`.
+4. Push to your branch: `git push origin feature/amazing-feature`.
+5. Open a Pull Request to the main branch.
