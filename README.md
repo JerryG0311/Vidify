@@ -1,16 +1,14 @@
 # Vidify
-A robust, distributed video management and transcoding platform built with Go, RabbitMQ, and AWS S3.
+Vidify is a high-performance, distributed video management platform that enables users to upload, transcode, and organize video content at scale. Built with a microservices-inspired architecture, it offloads heavy processing to dedicated workers to ensure a seamless and responsive user experience.
 
 ## Features
-- **Distributed Architecture:** Uses a Worker/API pattern to handle heavy video transcoding without blocking the web server.
-- **User Authentication:** Secure Signup/Login system using Bcrypt password hashing and session-based cookies.
-- **Async Processing:** RabbitMQ manages the job queue, ensuring reliable video processing.
-- **Cloud Storage:** Integrated with Amazon S3 for durable video and thumbnail storage.
-- **Modern Dashboard:**
-  - Drag-and-drop AJAX uploads with real-time progress bars.
-  - Playlist organization system with dynamic badges.
-  - Inline title editing and custom thumbnail management.
-  - Grid and List view toggles.
+- **Distributed Processing:** Utilizes a Producer/Consumer pattern with RabbitMQ to handle asynchronous video transcoding.
+- **Secure Authentication:** Multi-user support featuring Bcrypt password hashing and protected session management.
+- **Cloud Native Storage:** Full integration with Amazon S3 for reliable, scalable video and thumbnail hosting.
+- **Dynamic Organization:** User-defined playlist system with real-time UI updates and category badges.
+- **Modern Dashboard:** - Drag-and-drop AJAX upload interface with live progress tracking.
+  - Interactive gallery with Grid/List layout toggles.
+  - Inline metadata editing and custom thumbnail management.
 
 ## Tech Stack
 - **Backend:** Go (Golang)
