@@ -6,23 +6,23 @@
     <title>Vidify Library</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
-        body { background-color: #f4f7f9; margin: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #0f0f0f; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
         
         /* Header & Navigation */
         .header-flex {
             display: flex; justify-content: space-between; align-items: center;
             padding: 30px 40px 10px 40px; margin-bottom: 10px;
         }
-        h1 { margin: 0; font-size: 1.8em; color: #1a202c; font-weight: 800; }
+        h1 { margin: 0; font-size: 1.8em; color: #ffffff; font-weight: 800; }
         
         .header-right {
             display: flex; align-items: center; gap: 20px;
         }
 
         .user-info {
-            font-size: 0.85em; color: #718096; display: flex; align-items: center;
-            gap: 10px; background: #fff; padding: 6px 12px; border-radius: 20px;
-            border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            font-size: 0.85em; color: #9ca3af; display: flex; align-items: center;
+            gap: 10px; background: #181818; padding: 6px 12px; border-radius: 20px;
+            border: 1px solid #282828; box-shadow: 0 2px 10px rgba(0,0,0,0.18);
         }
 
         .logout-link {
@@ -38,8 +38,8 @@
         }
         .view-toggles { display: flex; gap: 10px; }
         .view-btn { 
-            background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; 
-            border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600;
+            background: #181818; border: 1px solid #282828; padding: 6px 12px; 
+            border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600; color: #e5e7eb;
         }
         .view-btn.active { background: #00adef; color: #fff; border-color: #00adef; }
 
@@ -49,9 +49,23 @@
             display: inline-flex; align-items: center; gap: 6px;
         }
         .btn-upload-sm:hover { background: #0081b3; }
+        .search-container input {
+            padding: 8px 12px;
+            border: 1px solid #282828;
+            border-radius: 6px;
+            width: 180px;
+            background: #181818;
+            color: #ffffff;
+            outline: none;
+        }
+        .search-container input::placeholder { color: #6b7280; }
+        .search-container input:focus {
+            border-color: #00adef;
+            box-shadow: 0 0 0 3px rgba(0, 173, 239, 0.12);
+        }
 
         /* --- Thumbnail FIX: Full Frame --- */
-        .thumb-column { width: 190px; }
+        .thumb-column { width: 190px; background: #181818; }
         .thumb-wrapper {
             position: relative; width: 180px; height: 101px; 
             border-radius: 8px; overflow: hidden; background: #000;
@@ -87,12 +101,12 @@
             width: 22px; height: 22px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;
         }
         .dropdown-menu { 
-            display: none; position: absolute; right: 0; top: 26px; background: white; 
-            min-width: 140px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; border: 1px solid #edf2f7; 
+            display: none; position: absolute; right: 0; top: 26px; background: #181818; 
+            min-width: 140px; box-shadow: 0 8px 20px rgba(0,0,0,0.35); border-radius: 8px; z-index: 100; border: 1px solid #282828; 
         }
         .dropdown-menu button { 
             display: block; width: 100%; padding: 10px 15px; text-align: left; 
-            border: none; background: none; font-size: 13px; cursor: pointer; color: #4a5568; 
+            border: none; background: none; font-size: 13px; cursor: pointer; color: #e5e7eb; 
         }
 
         /* Playlist Badge & Title */
@@ -103,31 +117,42 @@
         }
         .video-title-text {
             cursor: pointer; border-bottom: 2px solid #00adef; 
-            display: inline-block; font-size: 1.1em; color: #1a202c; font-weight: 600;
+            display: inline-block; font-size: 1.1em; color: #ffffff; font-weight: 600;
         }
 
         /* --- List View Table --- */
         #wrapper { padding: 0 40px 40px 40px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        th { text-align: left; padding: 15px 20px; background: #f8fafc; color: #a0aec0; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; }
-        td { padding: 20px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+        table { width: 100%; border-collapse: collapse; background: #181818; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.22); border: 1px solid #242424; }
+        th { text-align: left; padding: 15px 20px; background: #141414; color: #9ca3af; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; }
+        td { padding: 20px; border-bottom: 1px solid #242424; vertical-align: top; color: #e5e7eb; background: #181818; }
+        tbody tr { background: #181818; }
+        td:first-child,
+        td:nth-child(2),
+        td:nth-child(3) {
+            background: #181818;
+        }
+
+        tr.video-row {
+            background: #181818;
+        }
+        tbody tr:hover td { background: #1d1d1d; }
 
         /* --- Grid View Styling --- */
         .grid-view table, .grid-view thead, .grid-view tbody, .grid-view th, .grid-view td, .grid-view tr { display: block; }
         .grid-view thead { display: none; }
         .grid-view tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; background: transparent; }
-        .grid-view tr { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
+        .grid-view tr { background: #181818; padding: 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.22); border: 1px solid #242424; }
         .grid-view .thumb-column { width: 100%; margin-bottom: 15px; }
         .grid-view .thumb-wrapper { width: 100%; height: 150px; }
 
-        .action-icons { display: flex; gap: 18px; align-items: center; color: #718096; }
+        .action-icons { display: flex; gap: 18px; align-items: center; color: #9ca3af; }
         .icon-btn { background: none; border: none; cursor: pointer; color: inherit; padding: 4px; transition: 0.2s; }
         .icon-btn:hover { color: #00adef; }
         .icon-btn.liked svg { fill: #ff4b4b !important; }
 
         /* Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; position: relative; text-align: center; }
+        .modal-content { background: #181818; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; position: relative; text-align: center; color: #ffffff; border: 1px solid #282828; }
     </style>
 </head>
 <body class="list-view">
@@ -135,11 +160,11 @@
         <h1>Library</h1>
         <div class="header-right">
             <div class="search-container">
-                <input type="text" id="searchInput" onkeyup="filterVideos()" placeholder="Search titles..." style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; width: 180px;">
+                <input type="text" id="searchInput" onkeyup="filterVideos()" placeholder="Search titles...">
             </div>
             <div class="user-info">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <a href="/profile" style="text-decoration: none; color: inherit;">{{.UserEmail}}</a>
+                <a href="/profile" style="text-decoration: none; color: inherit; font-weight: 600;">{{.UserEmail}}</a>
                 <span style="color: #cbd5e0;">|</span>
                 <a href="/logout" class="logout-link">Logout</a>
             </div>
@@ -222,7 +247,7 @@
                 <a id="shareFB" target="_blank" style="color:#1877F2;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
                 <a id="shareLI" target="_blank" style="color:#0077b5;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/></svg></a>
             </div>
-            <input type="text" id="shareUrlInput" readonly style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center; background:#f8fafc; font-size: 0.85em;">
+            <input type="text" id="shareUrlInput" readonly style="width: 100%; padding: 10px; border: 1px solid #282828; border-radius: 8px; text-align: center; background:#101010; color:#ffffff; font-size: 0.85em; box-sizing:border-box;">
             <button id="copyBtn" onclick="copyShareToClipboard()" style="width:100%; background: #00adef; margin-top: 20px; padding: 10px; font-weight: 700; color: white; border: none; border-radius: 8px; cursor: pointer;">Copy to Clipboard</button>
         </div>
     </div>
@@ -231,9 +256,9 @@
         <div class="modal-content">
             <button onclick="closeThumbModal()" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
             <h2 style="font-size:1.3em;">Thumbnail Manager</h2>
-            <img id="thumbPreview" src="" style="width:100%; border-radius:8px; margin:15px 0; border:1px solid #eee; object-fit: cover; aspect-ratio: 16/9;">
+            <img id="thumbPreview" src="" style="width:100%; border-radius:8px; margin:15px 0; border:1px solid #282828; object-fit: cover; aspect-ratio: 16/9;">
             <form id="thumbForm" method="POST" enctype="multipart/form-data">
-                <div style="text-align:left; background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; font-size: 14px;">
+                <div style="text-align:left; background:#101010; padding:15px; border-radius:8px; margin-bottom:20px; font-size: 14px; border:1px solid #282828; color:#e5e7eb;">
                     <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="keep" checked> Keep current</label>
                     <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="remove"> Remove custom</label>
                     <label style="display:block; margin:8px 0;"><input type="radio" name="thumb_action" value="change"> Upload new</label>

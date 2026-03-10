@@ -21,7 +21,7 @@ var db *sql.DB
 func main() {
 	// SETTING UP DATABASE CONNECTION
 	var err error
-	db, err = sql.Open("sqlite3", "vidify.db")
+	db, err = sql.Open("sqlite3", "./data/vidify.db")
 	if err != nil {
 		log.Fatal(err)
 	}

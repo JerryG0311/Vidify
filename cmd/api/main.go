@@ -65,6 +65,13 @@ type CreatorPageData struct {
 	Videos  []VideoData
 }
 
+type ViewPageData struct {
+	Video         VideoData
+	Creator       ProfileData
+	RelatedVideos []VideoData
+	IsEmbed       bool
+}
+
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -722,26 +729,127 @@ func main() {
 
 	http.HandleFunc("/view/", func(w http.ResponseWriter, r *http.Request) {
 		id := filepath.Base(r.URL.Path)
-		// 1. Check if "?embed=true" is in the URL
 		isEmbed := r.URL.Query().Get("embed") == "true"
-		// 2. Increment views (only if NOT an embed, or keep it to track both)
-		db.Exec("UPDATE videos SET views = views + 1 WHERE id = ?", id)
+
+		if !isEmbed {
+			db.Exec("UPDATE videos SET views = views + 1 WHERE id = ?", id)
+		}
 
 		var v VideoData
-		query := `SELECT id, title, description, playlist, source_path, thumbnail_url, views, created_at 
-				FROM videos WHERE id = ?`
+		var thumbnail sql.NullString
+
+		query := `
+			SELECT id, user_id, title, description, playlist, source_path, thumbnail_url, views, created_at, status
+			FROM videos
+			WHERE id = ?`
 
 		err := db.QueryRow(query, id).Scan(
-			&v.ID, &v.Title, &v.Description, &v.Playlist, &v.SourcePath, &v.ThumbnailURL, &v.Views, &v.CreatedAt,
+			&v.ID,
+			&v.UserID,
+			&v.Title,
+			&v.Description,
+			&v.Playlist,
+			&v.SourcePath,
+			&thumbnail,
+			&v.Views,
+			&v.CreatedAt,
+			&v.Status,
 		)
-
 		if err != nil {
-			http.Redirect(w, r, "/gallery", 303)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 			return
 		}
 
-		tmpl, _ := template.ParseFiles("web/templates/view.html")
-		tmpl.Execute(w, map[string]interface{}{"Video": v, "IsEmbed": isEmbed})
+		if thumbnail.Valid {
+			v.ThumbnailURL = thumbnail.String
+		}
+
+		var creator ProfileData
+		creatorQuery := `
+			SELECT
+				email,
+				IFNULL(display_name, ''),
+				IFNULL(username, ''),
+				IFNULL(bio, ''),
+				IFNULL(website, ''),
+				IFNULL(instagram, ''),
+				IFNULL(profile_picture_url, '')
+			FROM users
+			WHERE email = ?`
+
+		err = db.QueryRow(creatorQuery, v.UserID).Scan(
+			&creator.Email,
+			&creator.DisplayName,
+			&creator.Username,
+			&creator.Bio,
+			&creator.Website,
+			&creator.Instagram,
+			&creator.ProfilePictureURL,
+		)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Creator lookup error for video %s: %v", v.ID, err)
+		}
+
+		var relatedVideos []VideoData
+		relatedRows, err := db.Query(`
+			SELECT id, user_id, title, description, playlist, source_path, thumbnail_url, views, created_at, status
+			FROM videos
+			WHERE user_id = ? AND id != ?
+			ORDER BY created_at DESC
+			LIMIT 6`, v.UserID, v.ID)
+		if err == nil {
+			defer relatedRows.Close()
+
+			for relatedRows.Next() {
+				var rv VideoData
+				var relatedPlaylist, relatedThumb sql.NullString
+
+				if err := relatedRows.Scan(
+					&rv.ID,
+					&rv.UserID,
+					&rv.Title,
+					&rv.Description,
+					&relatedPlaylist,
+					&rv.SourcePath,
+					&relatedThumb,
+					&rv.Views,
+					&rv.CreatedAt,
+					&rv.Status,
+				); err != nil {
+					log.Printf("Related video scan error for %s: %v", v.ID, err)
+					continue
+				}
+
+				if relatedPlaylist.Valid {
+					rv.Playlist = relatedPlaylist.String
+				}
+				if relatedThumb.Valid {
+					rv.ThumbnailURL = relatedThumb.String
+				}
+
+				relatedVideos = append(relatedVideos, rv)
+			}
+		} else {
+			log.Printf("Related videos query error for %s: %v", v.ID, err)
+		}
+
+		tmpl, err := template.ParseFiles("web/templates/view.html")
+		if err != nil {
+			log.Printf("View template error: %v", err)
+			http.Error(w, "View template not found", http.StatusInternalServerError)
+			return
+		}
+
+		data := ViewPageData{
+			Video:         v,
+			Creator:       creator,
+			RelatedVideos: relatedVideos,
+			IsEmbed:       isEmbed,
+		}
+
+		if err := tmpl.Execute(w, data); err != nil {
+			log.Printf("View template execution error: %v", err)
+		}
 	})
 
 	http.HandleFunc("/delete/", func(w http.ResponseWriter, r *http.Request) {
