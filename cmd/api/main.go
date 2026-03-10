@@ -60,6 +60,11 @@ type GalleryPageData struct {
 	UserEmail string
 }
 
+type CreatorPageData struct {
+	Creator ProfileData
+	Videos  []VideoData
+}
+
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -286,7 +291,7 @@ func main() {
 		switch r.URL.Query().Get("error") {
 		case "invalid_username":
 			data.UsernameError = "Username must be 3-30 characters and use only letters, numbers, periods, or underscores."
-		case "username_take":
+		case "username_taken":
 			data.UsernameError = "That username is already taken. Try another one."
 		}
 
@@ -603,6 +608,118 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/@") {
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		username := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/@"))
+		if username == "" {
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		lookupUsername := normalizeUsername(username, "")
+
+		var creator ProfileData
+		query := `
+			SELECT
+				u.email, 
+				IFNULL(u.display_name, ''),
+				IFNULL(u.username, ''),
+				IFNULL(u.bio, ''),
+				IFNULL(u.website, ''),
+				IFNULL(u.instagram, ''),
+				IFNULL(u.profile_picture_url, ''),
+				COUNT(v.id),
+				IFNULL(SUM(v.views), 0)
+			FROM users u
+			LEFT JOIN videos v ON u.email = v.user_id
+			WHERE u.username = ?
+			GROUP BY u.email, u.display_name, u.username, u.bio, u.website, u.instagram, u.profile_picture_url
+		`
+		err := db.QueryRow(query, lookupUsername).Scan(
+			&creator.Email,
+			&creator.DisplayName,
+			&creator.Username,
+			&creator.Bio,
+			&creator.Website,
+			&creator.Instagram,
+			&creator.ProfilePictureURL,
+			&creator.TotalVideos,
+			&creator.TotalViews,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.NotFound(w, r)
+				return
+			}
+			log.Printf("Creator profile query error: %v", err)
+			http.Error(w, "Unable to load creator page", http.StatusInternalServerError)
+			return
+		}
+
+		videoRows, err := db.Query(`
+			SELECT id, user_id, title, description, playlist, source_path, thumbnail_url, views, created_at, status
+			FROM videos
+			WHERE user_id = ?
+			ORDER BY created_at DESC
+		`, creator.Email)
+		if err != nil {
+			log.Printf("Creator videos query error: %v", err)
+			http.Error(w, "Unable to load creator videos", http.StatusInternalServerError)
+			return
+		}
+		defer videoRows.Close()
+
+		var videos []VideoData
+		for videoRows.Next() {
+			var v VideoData
+			var playlist, thumb sql.NullString
+
+			if err := videoRows.Scan(
+				&v.ID,
+				&v.UserID,
+				&v.Title,
+				&v.Description,
+				&playlist,
+				&v.SourcePath,
+				&thumb,
+				&v.Views,
+				&v.CreatedAt,
+				&v.Status,
+			); err != nil {
+				log.Printf("Creator video scan error: %v", err)
+				continue
+			}
+
+			if playlist.Valid {
+				v.Playlist = playlist.String
+			}
+			if thumb.Valid {
+				v.ThumbnailURL = thumb.String
+			}
+
+			videos = append(videos, v)
+		}
+
+		tmpl, err := template.ParseFiles("web/templates/creator.html")
+		if err != nil {
+			log.Printf("Creator template error: %v", err)
+			http.Error(w, "Creator template not found", http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, CreatorPageData{
+			Creator: creator,
+			Videos:  videos,
+		})
+		if err != nil {
+			log.Printf("Creator template execution error: %v", err)
+		}
+	})
+
 	http.HandleFunc("/view/", func(w http.ResponseWriter, r *http.Request) {
 		id := filepath.Base(r.URL.Path)
 		// 1. Check if "?embed=true" is in the URL
@@ -633,10 +750,6 @@ func main() {
 		storage.DeleteFromS3(id + "_thumb.jpg")
 		db.Exec("DELETE FROM videos WHERE id = ?", id)
 		http.Redirect(w, r, "/gallery", 303)
-	})
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
 	})
 
 	http.HandleFunc("/edit/", func(w http.ResponseWriter, r *http.Request) {
