@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -38,9 +42,89 @@ type User struct {
 	Password string
 }
 
+type ProfileData struct {
+	Email             string
+	DisplayName       string
+	Username          string
+	Bio               string
+	Website           string
+	Instagram         string
+	ProfilePictureURL string
+	TotalVideos       int
+	TotalViews        int
+}
+
 type GalleryPageData struct {
 	Videos    []VideoData
 	UserEmail string
+}
+
+func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		log.Printf("Failed to write JSON response: %v", err)
+	}
+}
+
+func sanitizeProfilePhotoFilename(userEmail, originalFilename string) string {
+	ext := strings.ToLower(filepath.Ext(originalFilename))
+	if ext == "" {
+		ext = ".jpg"
+	}
+
+	safeEmail := strings.NewReplacer("@", "_at_", ".", "_", "+", "_plus_").Replace(strings.ToLower(userEmail))
+	return fmt.Sprintf("profile-photos/%s-%d%s", safeEmail, time.Now().Unix(), ext)
+}
+
+func deriveProfileIdentity(email string) (string, string) {
+	localPart := strings.TrimSpace(strings.Split(email, "@")[0])
+	if localPart == "" {
+		return email, ""
+	}
+
+	displayName := strings.NewReplacer(".", " ", "_", " ", "-", " ").Replace(localPart)
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" {
+		displayName = email
+	} else {
+		displayName = strings.Title(displayName)
+	}
+
+	username := "@" + strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(localPart, " ", ""), ".", ""), "-", ""))
+	return displayName, username
+}
+
+func normalizeUsername(value, fallbackEmail string) string {
+	trimmed := strings.TrimSpace(strings.ToLower(value))
+	if trimmed == "" {
+		_, fallback := deriveProfileIdentity(fallbackEmail)
+		return fallback
+	}
+
+	trimmed = strings.TrimPrefix(trimmed, "@")
+	var builder strings.Builder
+	for _, r := range trimmed {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '.' {
+			builder.WriteRune(r)
+		}
+	}
+
+	finalUsername := builder.String()
+	if finalUsername == "" {
+		_, fallback := deriveProfileIdentity(fallbackEmail)
+		return fallback
+	}
+	return "@" + finalUsername
+}
+
+func normalizeDisplayName(value, fallbackEmail string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed != "" {
+		return trimmed
+	}
+	fallbackDisplayName, _ := deriveProfileIdentity(fallbackEmail)
+	return fallbackDisplayName
 }
 
 func getLoggedInUser(r *http.Request) string {
@@ -56,35 +140,11 @@ func main() {
 	var err error
 	// -- Database  --
 
-	db, err := sql.Open("sqlite3", "vidify.db")
+	db, err := sql.Open("sqlite3", "./data/vidify.db")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	defer db.Close()
-
-	db.Exec(`CREATE TABLE IF NOT EXISTS users(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT UNIQUE,
-			password TEXT
-	)`)
-
-	query := `CREATE TABLE IF NOT EXISTS videos (
-		id TEXT PRIMARY KEY, 
-		user_id TEXT,
-		status TEXT,
-		source_path TEXT,
-		thumbnail_url TEXT,
-		title TEXT,
-		description TEXT,
-		playlist	TEXT,
-		views INTEGER DEFAULT 0,
-		created_at DATETIME
-	
-	)`
-	_, err = db.Exec(query)
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
 
 	// -- RabbitMQ Setup --
 
@@ -124,8 +184,9 @@ func main() {
 			email := r.FormValue("email")
 			pass := r.FormValue("password")
 			hashed, _ := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
+			displayName, username := deriveProfileIdentity(email)
 
-			_, err := db.Exec("INSERT INTO users (email, password) VALUES (?, ?)", email, string(hashed))
+			_, err := db.Exec("INSERT INTO users (email, password, display_name, username) VALUES (?, ?, ?, ?)", email, string(hashed), displayName, username)
 			if err != nil {
 				http.Error(w, "User already exists", http.StatusConflict)
 				return
@@ -170,6 +231,181 @@ func main() {
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{Name: "session_user", Value: "", Path: "/", MaxAge: -1})
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		var data ProfileData
+		data.Email = userEmail
+
+		query := `
+			SELECT 
+				IFNULL(u.display_name, ''),
+				IFNULL(u.username, ''),
+				IFNULL(u.bio, ''),
+				IFNULL(u.website, ''),
+				IFNULL(u.instagram, ''),
+				IFNULL(u.profile_picture_url, ''), 
+				COUNT(v.id), 
+				IFNULL(SUM(v.views), 0) 
+			FROM users u 
+			LEFT JOIN videos v ON u.email = v.user_id 
+			WHERE u.email = ?
+			GROUP BY u.email`
+
+		err := db.QueryRow(query, userEmail).Scan(
+			&data.DisplayName,
+			&data.Username,
+			&data.Bio,
+			&data.Website,
+			&data.Instagram,
+			&data.ProfilePictureURL,
+			&data.TotalVideos,
+			&data.TotalViews,
+		)
+
+		if err != nil {
+			if err == sql.ErrNoRows {
+				data.Bio = ""
+				data.Website = ""
+				data.Instagram = ""
+				data.TotalVideos = 0
+				data.TotalViews = 0
+			} else {
+				log.Printf("Database error: %v", err)
+				http.Error(w, "Internal Server Error", 500)
+				return
+			}
+		}
+
+		if strings.TrimSpace(data.DisplayName) == "" || strings.TrimSpace(data.Username) == "" {
+			fallbackDisplayName, fallbackUsername := deriveProfileIdentity(userEmail)
+			if strings.TrimSpace(data.DisplayName) == "" {
+				data.DisplayName = fallbackDisplayName
+			}
+			if strings.TrimSpace(data.Username) == "" {
+				data.Username = fallbackUsername
+			}
+		}
+
+		tmpl, err := template.ParseFiles("web/templates/profile.html")
+		if err != nil {
+			log.Printf("Template error: %v", err)
+			http.Error(w, "Template not found", 500)
+			return
+		}
+		tmpl.Execute(w, data)
+	})
+
+	http.HandleFunc("/profile/update", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			log.Printf("Error parsing profile update form: %v", err)
+			http.Error(w, "Invalid form submission", http.StatusBadRequest)
+			return
+		}
+
+		displayName := normalizeDisplayName(r.FormValue("display_name"), userEmail)
+		username := normalizeUsername(r.FormValue("username"), userEmail)
+		newBio := strings.TrimSpace(r.FormValue("bio"))
+		website := strings.TrimSpace(r.FormValue("website"))
+		instagram := strings.TrimSpace(r.FormValue("instagram"))
+
+		_, err := db.Exec(
+			"UPDATE users SET display_name = ?, username = ?, bio = ?, website = ?, instagram = ? WHERE email = ?",
+			displayName,
+			username,
+			newBio,
+			website,
+			instagram,
+			userEmail,
+		)
+		if err != nil {
+			log.Printf("Error updating profile: %v", err)
+			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/profile/photo", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "You must be logged in to update your profile photo."})
+			return
+		}
+
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			log.Printf("Error parsing profile photo upload form: %v", err)
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid upload payload."})
+			return
+		}
+
+		file, header, err := r.FormFile("pfp")
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Please choose an image to upload."})
+			return
+		}
+		defer file.Close()
+
+		contentType := header.Header.Get("Content-Type")
+		switch contentType {
+		case "image/jpeg", "image/png", "image/webp":
+		default:
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Please upload a JPG, PNG, or WebP image."})
+			return
+		}
+
+		fileBytes, err := io.ReadAll(file)
+		if err != nil {
+			log.Printf("Error reading uploaded profile photo: %v", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to read uploaded image."})
+			return
+		}
+
+		if len(fileBytes) == 0 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "The uploaded image was empty."})
+			return
+		}
+
+		finalFilename := sanitizeProfilePhotoFilename(userEmail, header.Filename)
+		reader := bytes.NewReader(fileBytes)
+		pfpURL, uploadErr := storage.UploadToS3(finalFilename, reader)
+		if uploadErr != nil {
+			log.Printf("S3 profile photo upload error: %v", uploadErr)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to upload profile photo."})
+			return
+		}
+
+		_, err = db.Exec("UPDATE users SET profile_picture_url = ? WHERE email = ?", pfpURL, userEmail)
+		if err != nil {
+			log.Printf("Error updating profile photo URL in database: %v", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to save profile photo."})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]string{"profilePictureURL": pfpURL})
 	})
 
 	// ---- New Web Server Code ---

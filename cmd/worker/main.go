@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"log"
@@ -69,7 +70,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to declare exchange: %v", err)
 	}
-	ch.Close()
 
 	fmt.Println("Vidify Worker started. Waiting for video jobs...")
 
@@ -104,33 +104,62 @@ func handlerVideoJob(job routing.VideoJob) pubsub.AckType {
 
 	// 2. Download from S3 to local
 	if err := storage.DownloadFromS3(job.SourcePath, inputLocal); err != nil {
-		log.Printf("Download failed: %v", err)
-		time.Sleep(5 * time.Second) // pause for 5 seconds before retyring
+		log.Printf("Download failed for job %s: %v", job.ID, err)
+		time.Sleep(5 * time.Second)
 		return pubsub.NackRequeue
 	}
 
-	db.Exec("UPDATE videos SET status = ? WHERE ID = ?", "PROCESSING", job.ID)
+	if _, err := db.Exec("UPDATE videos SET status = ? WHERE id = ?", "PROCESSING", job.ID); err != nil {
+		log.Printf("Failed to update status to PROCESSING for job %s: %v", job.ID, err)
+	}
 
 	// 3. Generate Thumbnail
-	err := exec.Command("ffmpeg", "-i", inputLocal, "-ss", "00:00:01.000", "-vframes", "1", thumbLocal).Run()
+	thumbCmd := exec.Command("ffmpeg", "-y", "-i", inputLocal, "-ss", "00:00:01.000", "-vframes", "1", thumbLocal)
+	thumbOutput, err := thumbCmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Thumbnail generation failed: %v", err)
+		log.Printf("Thumbnail generation failed for job %s: %v | ffmpeg output: %s", job.ID, err, string(thumbOutput))
 	}
 
 	// 4. Main Transcode
-	if err := exec.Command("ffmpeg", "-y", "-i", inputLocal, outputLocal).Run(); err != nil {
-		log.Printf("Transcode failed: %v", err)
-		db.Exec("UPDATE videos SET status = ? WHERE ID = ?", "FAILED", job.ID)
+	transcodeCmd := exec.Command("ffmpeg", "-y", "-i", inputLocal, outputLocal)
+	transcodeOutput, err := transcodeCmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Transcode failed for job %s: %v | ffmpeg output: %s", job.ID, err, string(transcodeOutput))
+		if _, dbErr := db.Exec("UPDATE videos SET status = ? WHERE id = ?", "FAILED", job.ID); dbErr != nil {
+			log.Printf("Failed to update status to FAILED for job %s: %v", job.ID, dbErr)
+		}
 		return pubsub.NackDiscard
 	}
 
 	// 5. Upload Results Back to S3
 	fmt.Printf("Transcoding complete. Uploading results to S3...\n")
 
-	// Upload Processed Video
-	processedS3URL, _ := storage.UploadFileToS3(fmt.Sprintf("%s_processed.mp4", job.ID), outputLocal)
-	// Upload Thumbnail
-	autoThumbURL, _ := storage.UploadFileToS3(fmt.Sprintf("%s_thumb.jpg", job.ID), thumbLocal)
+	processedKey := fmt.Sprintf("%s_processed.mp4", job.ID)
+	processedS3URL, err := storage.UploadFileToS3(processedKey, outputLocal)
+	if err != nil {
+		log.Printf("Processed video upload failed for job %s: %v", job.ID, err)
+		if _, dbErr := db.Exec("UPDATE videos SET status = ? WHERE id = ?", "FAILED", job.ID); dbErr != nil {
+			log.Printf("Failed to update status to FAILED after processed upload error for job %s: %v", job.ID, dbErr)
+		}
+		return pubsub.NackRequeue
+	}
+
+	autoThumbURL := ""
+	thumbBytes, thumbReadErr := os.ReadFile(thumbLocal)
+	if thumbReadErr != nil {
+		log.Printf("Thumbnail file could not be read for job %s: %v", job.ID, thumbReadErr)
+	} else if len(thumbBytes) == 0 {
+		log.Printf("Thumbnail file was empty for job %s", job.ID)
+	} else {
+		thumbKey := fmt.Sprintf("%s_thumb.jpg", job.ID)
+		thumbReader := bytes.NewReader(thumbBytes)
+		thumbURL, thumbUploadErr := storage.UploadToS3(thumbKey, thumbReader)
+		if thumbUploadErr != nil {
+			log.Printf("Thumbnail upload failed for job %s: %v", job.ID, thumbUploadErr)
+		} else {
+			autoThumbURL = thumbURL
+		}
+	}
 
 	query := `
 			UPDATE videos
@@ -139,9 +168,9 @@ func handlerVideoJob(job routing.VideoJob) pubsub.AckType {
 				thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), ?)
 			WHERE id = ?
 			`
-	_, err = db.Exec(query, processedS3URL, autoThumbURL, job.ID)
-	if err != nil {
-		log.Printf("Final DB Updated Error: %v", err)
+	if _, err = db.Exec(query, processedS3URL, autoThumbURL, job.ID); err != nil {
+		log.Printf("Final DB update error for job %s: %v", job.ID, err)
+		return pubsub.NackRequeue
 	}
 
 	return pubsub.Ack

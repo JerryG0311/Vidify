@@ -8,12 +8,13 @@ services:
 
   api:
     build: .
-    command: ["./api"]
+    command: >
+      sh -c "goose -dir sql/schema sqlite3 ./data/vidify.db up && ./api"
     ports:
       - "8080:8080"
     volumes:
       - ./data:/app/data
-      - ./vidify.db:/app/vidify.db
+      - ./sql/schema:/app/sql/schema
     depends_on:
       - rabbitmq
     environment:
