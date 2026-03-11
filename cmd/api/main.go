@@ -37,6 +37,7 @@ type VideoData struct {
 	CTAText        string
 	CTAURL         string
 	CTATimeSeconds int
+	CTAType        string
 	CTAClicks      int
 	ShareCount     int
 	DownloadCount  int
@@ -577,7 +578,7 @@ func main() {
 		}
 
 		// 1. Fetch only videos belonging to THIS logged-in user
-		rows, err := db.Query("SELECT id, status, title, playlist, source_path, thumbnail_url, views, IFNULL(cta_text, ''), IFNULL(cta_url, ''), IFNULL(cta_time_seconds, 0) FROM videos WHERE user_id = ? ORDER BY created_at DESC", userEmail)
+		rows, err := db.Query("SELECT id, status, title, playlist, source_path, thumbnail_url, views, IFNULL(cta_text, ''), IFNULL(cta_url, ''), IFNULL(cta_time_seconds, 0), IFNULL(cta_type, 'button') FROM videos WHERE user_id = ? ORDER BY created_at DESC", userEmail)
 		if err != nil {
 			log.Printf("Database Query Error: %v", err)
 			http.Error(w, "Unable to load your library", http.StatusInternalServerError)
@@ -590,8 +591,8 @@ func main() {
 			var v VideoData
 			var thumb, playlist sql.NullString
 
-			// Ensure we scan correctly into NullStrings
-			err := rows.Scan(&v.ID, &v.Status, &v.Title, &playlist, &v.SourcePath, &thumb, &v.Views, &v.CTAText, &v.CTAURL, &v.CTATimeSeconds)
+			// scan into NullStrings
+			err := rows.Scan(&v.ID, &v.Status, &v.Title, &playlist, &v.SourcePath, &thumb, &v.Views, &v.CTAText, &v.CTAURL, &v.CTATimeSeconds, &v.CTAType)
 			if err != nil {
 				log.Printf("Scan error for video %s: %v", v.ID, err)
 				continue
@@ -753,7 +754,22 @@ func main() {
 		var thumbnail sql.NullString
 
 		query := `
-			SELECT id, user_id, title, description, playlist, source_path, thumbnail_url, views, created_at, status, IFNULL(cta_text, ''), IFNULL(cta_url, ''), IFNULL(cta_time_seconds, 0), IFNULL(cta_clicks, 0)
+			SELECT 
+			id, 
+			user_id, 
+			title, 
+			description, 
+			playlist, 
+			source_path, 
+			thumbnail_url, 
+			views, 
+			created_at, 
+			status, 
+			IFNULL(cta_text, ''), 
+			IFNULL(cta_url, ''), 
+			IFNULL(cta_time_seconds, 0), 
+			IFNULL(cta_type, 'button'),
+			IFNULL(cta_clicks, 0)
 			FROM videos
 			WHERE id = ?`
 
@@ -771,6 +787,7 @@ func main() {
 			&v.CTAText,
 			&v.CTAURL,
 			&v.CTATimeSeconds,
+			&v.CTAType,
 			&v.CTAClicks,
 		)
 		if err != nil {
@@ -938,6 +955,10 @@ func main() {
 
 		ctaText := strings.TrimSpace(r.FormValue("cta_text"))
 		ctaURL := strings.TrimSpace(r.FormValue("cta_url"))
+		ctaType := strings.TrimSpace(r.FormValue("cta_type"))
+		if ctaType != "email" && ctaType != "email_gate" {
+			ctaType = "button"
+		}
 		ctaTimeRaw := strings.TrimSpace(r.FormValue("cta_time_seconds"))
 		ctaTimeSeconds := 0
 		if ctaTimeRaw != "" {
@@ -948,17 +969,33 @@ func main() {
 			}
 		}
 
-		if ctaText == "" || ctaURL == "" {
-			ctaText = ""
-			ctaURL = ""
-			ctaTimeSeconds = 0
+		if ctaType == "email" || ctaType == "email_gate" {
+			if ctaText == "" {
+				ctaText = ""
+				ctaURL = ""
+				ctaTimeSeconds = 0
+				ctaType = "button"
+			} else {
+				ctaURL = "__email_capture__"
+				if ctaType == "email_gate" {
+					ctaTimeSeconds = 0
+				}
+			}
+		} else {
+			if ctaText == "" || ctaURL == "" {
+				ctaText = ""
+				ctaURL = ""
+				ctaTimeSeconds = 0
+				ctaType = "button"
+			}
 		}
 
 		result, err := db.Exec(
-			"UPDATE videos SET cta_text = ?, cta_url = ?, cta_time_seconds = ? WHERE id = ? AND user_id = ?",
+			"UPDATE videos SET cta_text = ?, cta_url = ?, cta_time_seconds = ?, cta_type = ? WHERE id = ? AND user_id = ?",
 			ctaText,
 			ctaURL,
 			ctaTimeSeconds,
+			ctaType,
 			id,
 			userEmail,
 		)
@@ -974,6 +1011,35 @@ func main() {
 		}
 
 		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/capture-lead/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		id := filepath.Base(r.URL.Path)
+		if id == "" {
+			http.Error(w, "missing video id", http.StatusBadRequest)
+			return
+		}
+
+		name := strings.TrimSpace(r.FormValue("name"))
+		email := strings.TrimSpace(r.FormValue("email"))
+		if email == "" || !strings.Contains(email, "@") {
+			http.Error(w, "invalid email", http.StatusBadRequest)
+			return
+		}
+
+		_, err := db.Exec("INSERT OR IGNORE INTO leads (video_id, email, name) VALUES (?, ?, ?)", id, email, name)
+		if err != nil {
+			log.Printf("Lead capture error for %s: %v", id, err)
+			http.Error(w, "failed to capture lead", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	http.HandleFunc("/cta-click/", func(w http.ResponseWriter, r *http.Request) {
@@ -1072,6 +1138,7 @@ func main() {
 			IFNULL(cta_text, ''), 
 			IFNULL(cta_url, ''), 
 			IFNULL(cta_time_seconds, 0), 
+			IFNULL(cta_type, 'button'),
 			IFNULL(cta_clicks, 0),
 			IFNULL(share_count, 0),
 			IFNULL(download_count, 0)
@@ -1091,6 +1158,7 @@ func main() {
 			&v.CTAText,
 			&v.CTAURL,
 			&v.CTATimeSeconds,
+			&v.CTAType,
 			&v.CTAClicks,
 			&v.ShareCount,
 			&v.DownloadCount,

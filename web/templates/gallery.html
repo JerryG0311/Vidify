@@ -245,7 +245,7 @@
                                     {{if eq .Status "COMPLETED"}}
                                     <button onclick="window.location.href='/stats/{{.ID}}'">Stats</button>
                                     <button onclick="openThumbModal('{{.ID}}', '{{.ThumbnailURL}}')">Edit Thumbnail</button>
-                                    <button onclick="openCTAModal('{{.ID}}', '{{js .CTAText}}', '{{js .CTAURL}}', '{{.CTATimeSeconds}}')">CTA Manager</button>
+                                    <button onclick="openCTAModal('{{.ID}}', '{{js .CTAText}}', '{{js .CTAURL}}', '{{.CTATimeSeconds}}', '{{.CTAType}}')">CTA Manager</button>
                                     {{end}}
                                     <form action="/delete/{{.ID}}" method="POST" onsubmit="return confirm('Delete video?');">
                                         <button type="submit" style="color:#e53e3e">Delete</button>
@@ -287,6 +287,18 @@
                     <label for="ctaTextInput">CTA Button Text</label>
                     <input id="ctaTextInput" type="text" name="cta_text" placeholder="Get Access">
                     <div class="modal-helper">This is the text viewers will see on the CTA button.</div>
+                </div>
+
+                <div class="modal-field">
+                    <label for="ctaTypeInput">CTA Type</label>
+                    <select id="ctaTypeInput" name="cta_type" style="width:100%; padding:12px 14px; border:1px solid #282828; border-radius:8px; background:#101010; color:#ffffff; box-sizing:border-box; outline:none;">
+                        <option value="button">Button CTA</option>
+                        <option value="email">Email Capture (Timed)</option>
+                        <option value="email_gate">Email Gate (Unlock Video)</option>
+                    </select>
+                    <div class="modal-helper">
+                        Choose whether the viewer clicks a link or enters their email.
+                    </div>
                 </div>
 
                 <div class="modal-field">
@@ -455,12 +467,14 @@
         }
         function closeThumbModal() { document.getElementById('thumbModal').style.display = 'none'; }
 
-        function openCTAModal(id, text, url, timeSeconds) {
+        function openCTAModal(id, text, url, timeSeconds, ctaType) {
             document.getElementById('ctaModal').style.display = 'flex';
             document.getElementById('ctaForm').action = `/manage-cta/${id}`;
             document.getElementById('ctaTextInput').value = text || '';
             document.getElementById('ctaUrlInput').value = url || '';
             document.getElementById('ctaTimeInput').value = timeSeconds && timeSeconds !== '0' ? timeSeconds : '';
+            document.getElementById('ctaTypeInput').value =
+                ctaType === 'email_gate' ? 'email_gate' : (ctaType === 'email' ? 'email' : 'button');
         }
 
         function closeCTAModal() {
@@ -471,6 +485,7 @@
             document.getElementById('ctaTextInput').value = '';
             document.getElementById('ctaUrlInput').value = '';
             document.getElementById('ctaTimeInput').value = '';
+            document.getElementById('ctaTypeInput').value = 'button';
         }
     </script>
 </body>
