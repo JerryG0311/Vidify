@@ -61,6 +61,7 @@ type ProfileData struct {
 	Bio               string
 	Website           string
 	Instagram         string
+	WebhookURL        string
 	ProfilePictureURL string
 	TotalVideos       int
 	TotalViews        int
@@ -106,6 +107,16 @@ type StatsPageData struct {
 	CTR           float64
 	LeadCount     int
 	Leads         []LeadData
+}
+
+type webhookPayload struct {
+	Event      string `json:"event"`
+	VideoID    string `json:"video_id"`
+	VideoTitle string `json:"video_title"`
+	UserEmail  string `json:"user_email"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	CapturedAt string `json:"captured_at"`
 }
 
 func parsePlayerOptions(r *http.Request) PlayerOptions {
@@ -350,6 +361,41 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	}
 }
 
+func sendWebHook(webhookURL string, payload webhookPayload) {
+	if strings.TrimSpace(webhookURL) == "" {
+		return
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Webhook marshal error: %v", err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, webhookURL, bytes.NewBuffer(body))
+	if err != nil {
+		log.Printf("Webhook request creation error: %v", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("webhook send error: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Printf("Webhook returned non-2xx status: %d", resp.StatusCode)
+	}
+}
+
 func sanitizeProfilePhotoFilename(userEmail, originalFilename string) string {
 	ext := strings.ToLower(filepath.Ext(originalFilename))
 	if ext == "" {
@@ -579,6 +625,7 @@ func main() {
 				IFNULL(u.bio, ''),
 				IFNULL(u.website, ''),
 				IFNULL(u.instagram, ''),
+				IFNULL(u.webhook_url, ''),
 				IFNULL(u.profile_picture_url, ''), 
 				COUNT(v.id), 
 				IFNULL(SUM(v.views), 0) 
@@ -593,6 +640,7 @@ func main() {
 			&data.Bio,
 			&data.Website,
 			&data.Instagram,
+			&data.WebhookURL,
 			&data.ProfilePictureURL,
 			&data.TotalVideos,
 			&data.TotalViews,
@@ -603,6 +651,7 @@ func main() {
 				data.Bio = ""
 				data.Website = ""
 				data.Instagram = ""
+				data.WebhookURL = ""
 				data.TotalVideos = 0
 				data.TotalViews = 0
 			} else {
@@ -659,14 +708,16 @@ func main() {
 		newBio := strings.TrimSpace(r.FormValue("bio"))
 		website := strings.TrimSpace(r.FormValue("website"))
 		instagram := strings.TrimSpace(r.FormValue("instagram"))
+		webhookURL := strings.TrimSpace(r.FormValue("webhook_url"))
 
 		_, err := db.Exec(
-			"UPDATE users SET display_name = ?, username = ?, bio = ?, website = ?, instagram = ? WHERE email = ?",
+			"UPDATE users SET display_name = ?, username = ?, bio = ?, website = ?, instagram = ?, webhook_url = ? WHERE email = ?",
 			displayName,
 			username,
 			newBio,
 			website,
 			instagram,
+			webhookURL,
 			userEmail,
 		)
 		if err != nil {
@@ -678,6 +729,41 @@ func main() {
 			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
 			return
 		}
+
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/test-webhook", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/profile", http.StatusSeeOther)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		var webhookURL string
+		err := db.QueryRow("SELECT IFNULL(webhook_url, '') FROM users WHERE email = ?", userEmail).Scan(&webhookURL)
+		if err != nil {
+			log.Printf("Webhook lookup error for test event: %v", err)
+			http.Redirect(w, r, "/profile", http.StatusSeeOther)
+			return
+		}
+
+		payload := webhookPayload{
+			Event:      "test_lead",
+			VideoID:    "vidify-test",
+			VideoTitle: "Vidify Test Video",
+			UserEmail:  userEmail,
+			Name:       "Test Lead",
+			Email:      "test@vidify.app",
+			CapturedAt: time.Now().UTC().Format(time.RFC3339),
+		}
+
+		go sendWebHook(webhookURL, payload)
 
 		http.Redirect(w, r, "/profile", http.StatusSeeOther)
 	})
@@ -1263,6 +1349,34 @@ func main() {
 			http.Error(w, "failed to capture lead", http.StatusInternalServerError)
 			return
 		}
+
+		var videoTitle string
+		var ownerEmail string
+		var webhookURL string
+
+		err = db.QueryRow(`
+			SELECT v.title, v.user_id, IFNULL(u.webhook_url, '')
+			FROM videos v
+			LEFT JOIN users u ON u.email = v.user_id
+			WHERE v.id = ?
+		`, id).Scan(&videoTitle, &ownerEmail, &webhookURL)
+		if err != nil {
+			log.Printf("Webhook lookup error for %s: %v", id, err)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		payload := webhookPayload{
+			Event:      "lead_captured",
+			VideoID:    id,
+			VideoTitle: videoTitle,
+			UserEmail:  ownerEmail,
+			Name:       name,
+			Email:      email,
+			CapturedAt: time.Now().UTC().Format(time.RFC3339),
+		}
+
+		go sendWebHook(webhookURL, payload)
 
 		w.WriteHeader(http.StatusNoContent)
 	})

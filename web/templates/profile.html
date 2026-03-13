@@ -208,6 +208,14 @@
                         <input id="instagram-input" class="text-input" type="text" name="instagram" form="profile-form" value="{{.Instagram}}" placeholder="@yourinstagram">
                         <div class="helper-text">Add your Instagram so your profile feels more like a real creator page.</div>
                     </div>
+                    <div class="form-group" style="margin-bottom: 0; max-width: 780px;">
+                        <label for="webhook-url-input">Webhook URL</label>
+                        <input id="webhook-url-input" class="text-input" type="url" name="webhook_url" form="profile-form" value="{{.WebhookURL}}" placeholder="https://hooks.zapier.com/...">
+                        <div class="helper-text">Paste a webhook URL to send events like lead captures into tools like Zapier, Make, GoHighLevel, HubSpot, or your own backend.</div>
+                        <form action="/test-webhook" method="POST" style="margin-top: 12px;">
+                            <button type="submit" style="background:#00adef; color:white; border:none; border-radius:8px; padding:12px 16px; font-weight:700; cursor:pointer;">Send Test Lead</button>
+                        </form>
+                    </div>
                 </div>
             </div>
 

@@ -769,6 +769,12 @@
             document.getElementById('linkTabBtn').className = tab === 'link' ? 'tab-btn active' : 'tab-btn inactive';
             document.getElementById('embedTabBtn').className = tab === 'embed' ? 'tab-btn active' : 'tab-btn inactive';
             document.getElementById('playerTabBtn').className = tab === 'player' ? 'tab-btn active' : 'tab-btn inactive';
+            const copyBtn = document.getElementById('copyBtn');
+            if (copyBtn) {
+                if (tab === 'link') copyBtn.innerText = 'Copy Share Link';
+                else if (tab === 'embed') copyBtn.innerText = 'Copy Embed Code';
+                else copyBtn.innerText = 'Copy Player Link';
+            }
         }
         function copyToClipboard() {
             const inputId = currentTab === 'link'
@@ -781,7 +787,11 @@
             sendAnalyticsPing('share-click', currentVideoId);
             const btn = document.getElementById('copyBtn');
             btn.innerText = "Copied!";
-            setTimeout(() => { btn.innerText = "Copy to Clipboard"; }, 2000);
+            setTimeout(() => {
+                if (currentTab === 'link') btn.innerText = 'Copy Share Link';
+                else if (currentTab === 'embed') btn.innerText = 'Copy Embed Code';
+                else btn.innerText = 'Copy Player Link';
+            }, 2000);
         }
         function closeModal() { document.getElementById('shareModal').style.display = 'none'; }
 

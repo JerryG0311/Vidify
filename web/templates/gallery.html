@@ -555,6 +555,13 @@
             document.getElementById('linkTabBtn').className = tab === 'link' ? 'tab-btn active' : 'tab-btn inactive';
             document.getElementById('embedTabBtn').className = tab === 'embed' ? 'tab-btn active' : 'tab-btn inactive';
             document.getElementById('playerTabBtn').className = tab === 'player' ? 'tab-btn active' : 'tab-btn inactive';
+
+            const copyBtn = document.getElementById('copyBtn');
+            if (copyBtn) {
+                if (tab === 'link') copyBtn.innerText = 'Copy Share Link';
+                else if (tab === 'embed') copyBtn.innerText = 'Copy Embed Code';
+                else copyBtn.innerText = 'Copy Player Link';
+            }
         }
         
         function copyShareToClipboard() {
@@ -568,8 +575,13 @@
             navigator.clipboard.writeText(copyText.value);
             sendAnalyticsPing('share-click', currentShareVideoId);
 
-            document.getElementById('copyBtn').innerText = "copied!";
-            setTimeout(() => { document.getElementById('copyBtn').innerText = "Copy to Clipboard"; }, 2000);
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.innerText = 'Copied!';
+            setTimeout(() => {
+                if (currentTab === 'link') copyBtn.innerText = 'Copy Share Link';
+                else if (currentTab === 'embed') copyBtn.innerText = 'Copy Embed Code';
+                else copyBtn.innerText = 'Copy Player Link';
+            }, 2000);
         }
 
         function openThumbModal(id, url) {
