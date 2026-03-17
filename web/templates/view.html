@@ -155,17 +155,25 @@
        .video-stage.is-gated .video-cta-overlay {
             opacity: 1;
             pointer-events: auto;
+            position: absolute;
             left: 50%;
-            top: 50%;
-            bottom: auto;
-            transform: translate(-50%, -50%);
-            width: min(92%, 560px);
-            max-width: 560px;
+            top: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translate(-50%, -50%) !important;
+            width: min(calc(100% - 140px), 640px);
+            max-width: 640px;
             background: rgba(17, 17, 17, 0.92);
             border: 1px solid rgba(255,255,255,0.12);
             box-shadow: 0 26px 60px rgba(0,0,0,0.45);
             padding: 20px;
             border-radius: 18px;
+            margin: 0;
+        }
+
+        .video-stage.is-gated .video-cta-overlay.has-inline-form {
+            width: min(calc(100% - 140px), 640px);
+            max-width: 640px;
         }
 
         .video-stage.is-gated .main-play-badge {
@@ -215,14 +223,112 @@
             width: 100%;
         }
 
+
+        .video-cta-overlay.has-inline-form {
+            max-width: 760px;
+            width: min(calc(100% - 32px), 760px);
+            padding: 18px;
+        }
+
+        .video-cta-overlay.has-inline-form > .video-cta-content {
+            display: none !important;
+        }
+
+        .video-cta-overlay.has-inline-form .video-cta-form {
+            display: block !important;
+        }
+
+        .video-cta-overlay.has-inline-form .video-cta-form .video-cta-content {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: flex-start !important;
+            gap: 16px !important;
+            width: 100%;
+        }
+
+        .video-cta-overlay.has-inline-form .timed-cta-form-copy,
+        .video-cta-overlay.has-inline-form .video-lead-fields {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .video-cta-overlay.has-inline-form .timed-cta-form-copy {
+            text-align: center;
+            padding-right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .video-cta-overlay.has-inline-form .timed-cta-form-title {
+            font-size: 22px;
+            line-height: 1.25;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .video-cta-overlay.has-inline-form .timed-cta-form-subtext {
+            color: #cbd5e1;
+            font-size: 15px;
+            line-height: 1.55;
+            text-align: center;
+        }
+        .video-cta-overlay.has-inline-form .video-lead-fields {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+            align-items: center !important;
+            width: 100% !important;
+        }
+
+        .video-cta-overlay.has-inline-form .video-lead-fields input[name="name"],
+        .video-cta-overlay.has-inline-form .video-lead-fields input[name="email"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .video-cta-overlay.has-inline-form .timed-cta-form-title,
+        .video-cta-overlay.has-inline-form .timed-cta-form-subtext {
+            display: block !important;
+            width: 100%;
+        }
+
+        .video-cta-overlay.has-inline-form .video-lead-input {
+            width: 100% !important;
+            height: 48px;
+            padding: 0 14px !important;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 860px) {
+            .video-cta-overlay.has-inline-form .video-lead-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .video-cta-overlay.has-inline-form .video-cta-button {
+            width: 100% !important;
+            height: 48px;
+            padding: 0 18px;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+
         .video-lead-form.is-gate-layout .video-cta-content {
             flex-direction: column;
             align-items: stretch !important;
+            justify-content: center;
             gap: 14px;
         }
 
-        .video-lead-form.is-gate-layout {
-            max-width: 560px;
+       .video-lead-form.is-gate-layout {
+            max-width: 100%;
+            width: 100%;
             margin: 0 auto;
         }
 
@@ -234,7 +340,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            width: 100%;
         }
 
         .video-lead-form.is-gate-layout .video-cta-copy::before {
@@ -255,8 +363,9 @@
             font-size: 22px;
             line-height: 1.25;
             font-weight: 700;
-            max-width: 420px;
+            max-width: 100%;
             margin: 0 auto;
+            text-align: center;
         }
 
         .video-lead-form.is-gate-layout .video-cta-subtext {
@@ -264,30 +373,37 @@
             font-size: 14px;
             line-height: 1.5;
             text-align: center;
-            max-width: 420px;
+            max-width: 100%;
             margin: 0 auto;
         }
 
-        .video-lead-form.is-gate-layout .video-lead-fields {
+       .video-lead-form.is-gate-layout .video-lead-fields {
             display: flex;
             flex-direction: column;
             gap: 12px;
             width: 100%;
             align-items: stretch;
+            max-width: 100%;
         }
 
         .video-lead-form.is-gate-layout .video-lead-input {
             width: 100% !important;
-            padding: 13px 14px !important;
+            height: 48px;
+            padding: 0 14px !important;
             font-size: 15px;
+            box-sizing: border-box;
         }
 
-        .video-lead-form.is-gate-layout .video-cta-button {
+       .video-lead-form.is-gate-layout .video-cta-button {
             width: 100%;
-            padding: 14px 18px;
+            height: 48px;
+            padding: 0 18px;
             font-size: 15px;
             border-radius: 12px;
             margin-top: 2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         @media (max-width: 640px) {
@@ -580,13 +696,13 @@
             <video {{if .PlayerOptions.Controls}}controls{{end}} {{if .PlayerOptions.Autoplay}}autoplay{{end}} {{if .PlayerOptions.Muted}}muted{{end}} playsinline poster="{{.Video.ThumbnailURL}}" class="is-embed-video">
                 <source src="{{.Video.SourcePath}}" type="video/mp4">
             </video>
-            {{if and .Video.CTAText .Video.CTAURL}}
+            {{if or (and .Video.CTAText .Video.CTAURL) .CTAs}}
             <div class="video-cta-overlay">
-                {{if or (eq .Video.CTAType "email") (eq .Video.CTAType "email_gate")}}
+                {{if and (not .CTAs) (or (eq .Video.CTAType "email") (eq .Video.CTAType "email_gate"))}}
                 <form class="video-lead-form {{if eq .Video.CTAType "email_gate"}}is-gate-layout{{end}}" data-video-id="{{.Video.ID}}" data-cta-type="{{.Video.CTAType}}">
-                    <div class="video-cta-content" style="align-items:flex-end;">
+                    <div class="video-cta-content">
                         <div class="video-cta-copy" style="flex:1;">
-                            <div class="video-cta-text">{{.Video.CTAText}}</div>
+                            <div class="video-cta-text">{{if .Video.CTAHeroText}}{{.Video.CTAHeroText}}{{else}}{{if eq .Video.CTAType "email_gate"}}Unlock This Video{{else}}Enter your info below{{end}}{{end}}</div>
                             {{if eq .Video.CTAType "email_gate"}}
                             <div class="video-cta-subtext">Enter your name and email below to unlock the full video.</div>
                             {{end}}
@@ -604,10 +720,38 @@
                 {{else}}
                 <div class="video-cta-content">
                     <div class="video-cta-copy">
-                        <div class="video-cta-text">{{.Video.CTAText}}</div>
+                        <div class="video-cta-text">{{if .Video.CTAHeroText}}{{.Video.CTAHeroText}}{{else}}Ready to take the next step?{{end}}</div>
                     </div>
-                    <a class="video-cta-button" href="{{.Video.CTAURL}}" target="_blank" rel="noopener noreferrer" data-cta-track="true" data-video-id="{{.Video.ID}}">{{.Video.CTAText}}</a>
+                    <a class="video-cta-button" href="{{if .Video.CTAURL}}{{.Video.CTAURL}}{{else}}#{{end}}" data-cta-url="{{.Video.CTAURL}}" target="_blank" rel="noopener noreferrer" data-cta-track="true" data-video-id="{{.Video.ID}}">{{if .Video.CTAText}}{{.Video.CTAText}}{{else}}Learn More{{end}}</a>
                 </div>
+                <form class="video-lead-form video-cta-form" data-video-id="{{.Video.ID}}" data-cta-type="email" action="/capture-lead/{{.Video.ID}}" method="POST" style="display:none; width:100%;">
+                    <div class="video-cta-content" style="align-items:flex-end; width:100%;">
+                        <div class="video-cta-copy timed-cta-form-copy" style="flex:1;">
+                            <div class="video-cta-text timed-cta-form-title"></div>
+                            <div class="video-cta-subtext timed-cta-form-subtext"></div>
+                        </div>
+                        <div class="video-lead-fields" style="flex:1; width:100%; display:flex; flex-direction:column; gap:10px;">
+                            <input class="video-lead-input" type="text" name="name" placeholder="First name" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                            <input class="video-lead-input" type="email" name="email" placeholder="Email address" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                        </div>
+                        <button class="video-cta-button video-cta-submit" type="submit">Get Access</button>
+                    </div>
+                    <div class="video-lead-message" style="display:none; margin-top:10px; color:#9ae6b4; font-size:13px;">All set! Enjoy the video.</div>
+                </form>
+                <form class="video-lead-form video-gate-form is-gate-layout" data-video-id="{{.Video.ID}}" data-cta-type="email_gate" action="/capture-lead/{{.Video.ID}}" method="POST" style="display:none; width:100%;">
+                    <div class="video-cta-content">
+                        <div class="video-cta-copy" style="flex:1;">
+                            <div class="video-cta-text gate-form-title"></div>
+                            <div class="video-cta-subtext gate-form-subtext"></div>
+                        </div>
+                        <div class="video-lead-fields" style="flex:1; width:100%; display:flex; flex-direction:column; gap:10px;">
+                            <input class="video-lead-input" type="text" name="name" placeholder="Enter your name" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                            <input class="video-lead-input" type="email" name="email" placeholder="Enter your email" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                        </div>
+                        <button class="video-cta-button video-gate-submit" type="submit">Unlock Video</button>
+                    </div>
+                    <div class="video-lead-message" style="display:none; margin-top:10px; color:#9ae6b4; font-size:13px;">All set! Enjoy the video.</div>
+                </form>
                 {{end}}
             </div>
             {{end}}
@@ -620,13 +764,13 @@
                     <video {{if .PlayerOptions.Controls}}controls{{end}} {{if .PlayerOptions.Autoplay}}autoplay{{end}} {{if .PlayerOptions.Muted}}muted{{end}} playsinline poster="{{.Video.ThumbnailURL}}">
                         <source src="{{.Video.SourcePath}}" type="video/mp4">
                     </video>
-                    {{if and .Video.CTAText .Video.CTAURL}}
+                    {{if or (and .Video.CTAText .Video.CTAURL) .CTAs}}
                     <div class="video-cta-overlay">
-                        {{if or (eq .Video.CTAType "email") (eq .Video.CTAType "email_gate")}}
+                        {{if and (not .CTAs) (or (eq .Video.CTAType "email") (eq .Video.CTAType "email_gate"))}}
                         <form class="video-lead-form {{if eq .Video.CTAType "email_gate"}}is-gate-layout{{end}}" data-video-id="{{.Video.ID}}" data-cta-type="{{.Video.CTAType}}">
-                            <div class="video-cta-content" style="align-items:flex-end;">
+                            <div class="video-cta-content">
                                 <div class="video-cta-copy" style="flex:1;">
-                                    <div class="video-cta-text">{{.Video.CTAText}}</div>
+                                    <div class="video-cta-text">{{if .Video.CTAHeroText}}{{.Video.CTAHeroText}}{{else}}{{if eq .Video.CTAType "email_gate"}}Unlock This Video{{else}}Enter your info below{{end}}{{end}}</div>
                                     {{if eq .Video.CTAType "email_gate"}}
                                     <div class="video-cta-subtext">Enter your name and email below to unlock the full video.</div>
                                     {{end}}
@@ -644,10 +788,38 @@
                         {{else}}
                         <div class="video-cta-content">
                             <div class="video-cta-copy">
-                                <div class="video-cta-text">{{.Video.CTAText}}</div>
+                                <div class="video-cta-text">{{if .Video.CTAHeroText}}{{.Video.CTAHeroText}}{{else}}Ready to take the next step?{{end}}</div>
                             </div>
-                            <a class="video-cta-button" href="{{.Video.CTAURL}}" target="_blank" rel="noopener noreferrer" data-cta-track="true" data-video-id="{{.Video.ID}}">{{.Video.CTAText}}</a>
+                            <a class="video-cta-button" href="{{if .Video.CTAURL}}{{.Video.CTAURL}}{{else}}#{{end}}" data-cta-url="{{.Video.CTAURL}}" target="_blank" rel="noopener noreferrer" data-cta-track="true" data-video-id="{{.Video.ID}}">{{if .Video.CTAText}}{{.Video.CTAText}}{{else}}Learn More{{end}}</a>
                         </div>
+                        <form class="video-lead-form video-cta-form" data-video-id="{{.Video.ID}}" data-cta-type="email" action="/capture-lead/{{.Video.ID}}" method="POST" style="display:none; width:100%;">
+                            <div class="video-cta-content" style="align-items:flex-end; width:100%;">
+                                <div class="video-cta-copy timed-cta-form-copy" style="flex:1;">
+                                    <div class="video-cta-text timed-cta-form-title"></div>
+                                    <div class="video-cta-subtext timed-cta-form-subtext"></div>
+                                </div>
+                                <div class="video-lead-fields" style="flex:1; width:100%; display:flex; flex-direction:column; gap:10px;">
+                                    <input class="video-lead-input" type="text" name="name" placeholder="First name" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                                    <input class="video-lead-input" type="email" name="email" placeholder="Email address" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                                </div>
+                                <button class="video-cta-button video-cta-submit" type="submit">Get Access</button>
+                            </div>
+                            <div class="video-lead-message" style="display:none; margin-top:10px; color:#9ae6b4; font-size:13px;">All set! Enjoy the video.</div>
+                        </form>
+                        <form class="video-lead-form video-gate-form is-gate-layout" data-video-id="{{.Video.ID}}" data-cta-type="email_gate" action="/capture-lead/{{.Video.ID}}" method="POST" style="display:none; width:100%;">
+                            <div class="video-cta-content">
+                                <div class="video-cta-copy" style="flex:1;">
+                                    <div class="video-cta-text gate-form-title"></div>
+                                    <div class="video-cta-subtext gate-form-subtext"></div>
+                                </div>
+                                <div class="video-lead-fields" style="flex:1; width:100%; display:flex; flex-direction:column; gap:10px;">
+                                    <input class="video-lead-input" type="text" name="name" placeholder="Enter your name" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                                    <input class="video-lead-input" type="email" name="email" placeholder="Enter your email" required style="width:100%; padding:11px 12px; border:1px solid #2f2f2f; border-radius:10px; background:#101010; color:#ffffff; box-sizing:border-box;">
+                                </div>
+                                <button class="video-cta-button video-gate-submit" type="submit">Unlock Video</button>
+                            </div>
+                            <div class="video-lead-message" style="display:none; margin-top:10px; color:#9ae6b4; font-size:13px;">All set! Enjoy the video.</div>
+                        </form>
                         {{end}}
                     </div>
                     {{end}}
@@ -744,6 +916,11 @@
         </div>
     </div>
 
+    <script id="timed-ctas-json" type="application/json">[
+        {{range $index, $cta := .CTAs}}{{if $index}},{{end}}
+        {"id":{{printf "%q" $cta.ID}},"heroText":{{printf "%q" $cta.HeroText}},"text":{{printf "%q" $cta.Text}},"url":{{printf "%q" $cta.URL}},"ctaType":{{printf "%q" $cta.CTAType}},"timeSeconds":{{$cta.TimeSeconds}}}
+        {{end}}
+    ]</script>
     <script>
         let currentTab = 'link';
         function openShareModal(title) {
@@ -797,21 +974,302 @@
 
         const currentVideoId = '{{.Video.ID}}';
 
-        const trackedSeconds = new Set();
+        const timedCTAs = JSON.parse(document.getElementById('timed-ctas-json')?.textContent || '[]');
+        function trackRetention() {
+            // no-op fallback to prevent player JS from breaking when retention tracking isn't wired on this page
+        }
 
-        function trackRetention(second) {
-            if (!currentVideoId || second < 0 || trackedSeconds.has(second)) return;
-            trackedSeconds.add(second);
+        function normalizeCTAText(value) {
+            if (typeof value !== 'string') return '';
+            return value.replace(/^"+|"+$/g, '').trim();
+        }
 
-            fetch('/track', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    video_id: currentVideoId,
-                    second: second
-                }),
-                keepalive: true
-            }).catch(() => {});
+        function normalizeCTAURL(value) {
+            if (typeof value !== 'string') return '';
+            const cleaned = value.replace(/^"+|"+$/g, '').trim();
+            if (!cleaned || cleaned === '__email_capture__') return '';
+            return cleaned;
+        }
+
+        function getDismissedCTAIds(stage) {
+            const raw = stage?.dataset?.dismissedCtaIds || '';
+            return new Set(raw.split(',').map((id) => id.trim()).filter(Boolean));
+        }
+
+        function setDismissedCTAId(stage, ctaId) {
+            if (!stage || !ctaId) return;
+            const dismissed = getDismissedCTAIds(stage);
+            dismissed.add(ctaId);
+            stage.dataset.dismissedCtaIds = Array.from(dismissed).join(',');
+        }
+
+        function getCTAEndSecond(index) {
+            const currentCTA = timedCTAs[index];
+            const nextCTA = timedCTAs[index + 1];
+            if (!currentCTA) return Infinity;
+
+            if ((currentCTA.ctaType || 'button') === 'email_gate') {
+                return Infinity;
+            }
+
+            const defaultDisplaySeconds = 8;
+            const gapBeforeNextCTA = 3;
+            const naturalEnd = currentCTA.timeSeconds + defaultDisplaySeconds;
+
+            if (!nextCTA) {
+                return naturalEnd;
+            }
+
+            return Math.max(currentCTA.timeSeconds + 1, Math.min(naturalEnd, nextCTA.timeSeconds - gapBeforeNextCTA));
+        }
+
+        function getActiveCTA(currentSecond, stage = null) {
+            if (!Array.isArray(timedCTAs) || timedCTAs.length === 0) return null;
+            const dismissedCTAIds = getDismissedCTAIds(stage);
+
+            for (let i = 0; i < timedCTAs.length; i++) {
+                const cta = timedCTAs[i];
+                const startSecond = Number(cta.timeSeconds || 0);
+                const endSecond = getCTAEndSecond(i);
+                const ctaType = cta.ctaType || 'button';
+                if (dismissedCTAIds.has(cta.id)) {
+                    continue;
+                }
+
+                if (ctaType === 'email_gate') {
+                    if (currentSecond >= startSecond) {
+                        return cta;
+                    }
+                    continue;
+                }
+
+                if (currentSecond >= startSecond && currentSecond < endSecond) {
+                    return cta;
+                }
+            }
+
+            return null;
+        }
+
+        function applyTimedCTA(stage, currentSecond) {
+            const ctaOverlay = stage.querySelector('.video-cta-overlay');
+            const legacyContent = stage.querySelector('.video-cta-overlay > .video-cta-content');
+            const ctaButton = stage.querySelector('.video-cta-button');
+            const ctaText = legacyContent ? legacyContent.querySelector('.video-cta-text') : null;
+            const ctaForm = stage.querySelector('.video-cta-form');
+            const ctaSubmit = stage.querySelector('.video-cta-submit');
+            const timedTitle = stage.querySelector('.timed-cta-form-title');
+            const timedSubtext = stage.querySelector('.timed-cta-form-subtext');
+            const gateForm = stage.querySelector('.video-gate-form');
+            const gateTitle = stage.querySelector('.gate-form-title');
+            const gateSubtext = stage.querySelector('.gate-form-subtext');
+            const gateSubmit = stage.querySelector('.video-gate-submit');
+            const video = stage.querySelector('video');
+
+            if (!ctaOverlay) return;
+
+            const activeCTA = getActiveCTA(currentSecond, stage);
+            if (!activeCTA) {
+                stage.classList.remove('show-cta');
+                stage.classList.remove('hide-cta-play-badge');
+                stage.classList.remove('is-gated');
+                ctaOverlay.classList.remove('has-inline-form');
+
+                if (legacyContent) {
+                    legacyContent.style.display = '';
+                }
+                if (ctaButton) {
+                    ctaButton.style.display = '';
+                }
+                if (ctaForm) {
+                    ctaForm.style.display = 'none';
+                    ctaForm.classList.remove('is-gate-layout');
+                    ctaForm.dataset.ctaType = 'email';
+                }
+                if (gateForm) {
+                    gateForm.style.display = 'none';
+                    gateForm.classList.remove('is-gate-layout');
+                }
+                return;
+            }
+
+            const cleanHeroText = normalizeCTAText(activeCTA.heroText || '');
+            const cleanText = normalizeCTAText(activeCTA.text || 'Learn More');
+            const cleanURL = normalizeCTAURL(activeCTA.url || '');
+            const ctaType = activeCTA.ctaType || 'button';
+            const isEmailGateCTA = ctaType === 'email_gate';
+            const isEmailCTA = ctaType === 'email' || cleanURL === '';
+
+            if (isEmailGateCTA) {
+                ctaOverlay.classList.remove('has-inline-form');
+
+                if (legacyContent) {
+                    legacyContent.style.display = 'none';
+                }
+
+                if (ctaButton) {
+                    ctaButton.style.display = 'none';
+                }
+
+                if (ctaForm) {
+                    ctaForm.style.display = 'none';
+                    ctaForm.classList.remove('is-gate-layout');
+                }
+
+                if (gateForm) {
+                    gateForm.style.display = 'block';
+                    gateForm.dataset.ctaType = 'email_gate';
+                    gateForm.classList.add('is-gate-layout');
+
+                    const nameInput = gateForm.querySelector('input[name="name"]');
+                    const emailInput = gateForm.querySelector('input[name="email"]');
+                    if (nameInput) {
+                        nameInput.style.display = 'block';
+                        nameInput.required = true;
+                    }
+                    if (emailInput) {
+                        emailInput.style.display = 'block';
+                        emailInput.required = true;
+                    }
+                }
+
+                if (gateTitle) {
+                    gateTitle.textContent = 'Ready to take the next step?';
+                }
+
+                if (gateSubtext) {
+                    gateSubtext.textContent = 'Enter your name and email below to unlock the full video.';
+                }
+
+                if (gateSubmit) {
+                    gateSubmit.textContent = 'Get Access';
+                }
+
+                const formMessage = gateForm ? gateForm.querySelector('.video-lead-message') : null;
+                if (formMessage) {
+                    formMessage.style.display = 'none';
+                }
+
+                stage.classList.add('show-cta');
+                stage.classList.add('hide-cta-play-badge');
+
+                if (!isGateUnlocked()) {
+                    stage.classList.add('is-gated');
+                    if (video) video.pause();
+                } else {
+                    stage.classList.remove('is-gated');
+                }
+
+                return;
+            }
+
+            if (isEmailCTA) {
+                ctaOverlay.classList.add('has-inline-form');
+
+                if (legacyContent) {
+                    legacyContent.style.display = 'none';
+                }
+
+                if (ctaButton) {
+                    ctaButton.style.display = 'none';
+                }
+
+                if (ctaForm) {
+                    ctaForm.style.display = 'block';
+                    ctaForm.dataset.ctaType = ctaType;
+                    ctaForm.classList.remove('is-gate-layout');
+
+                    const nameInput = ctaForm.querySelector('input[name="name"]');
+                    const emailInput = ctaForm.querySelector('input[name="email"]');
+                    if (nameInput) {
+                        nameInput.style.display = 'block';
+                        nameInput.required = true;
+                    }
+                    if (emailInput) {
+                        emailInput.style.display = 'block';
+                        emailInput.required = true;
+                    }
+                }
+
+                if (gateForm) {
+                    gateForm.style.display = 'none';
+                    gateForm.classList.remove('is-gate-layout');
+                }
+
+                if (timedTitle) {
+                    timedTitle.innerHTML = '';
+                    timedTitle.textContent = cleanHeroText || 'Get access to this free guide';
+                }
+
+                if (timedSubtext) {
+                    timedSubtext.innerHTML = '';
+                    timedSubtext.textContent = 'Enter your first name and email below to continue.';
+                }
+
+                if (ctaSubmit) {
+                    ctaSubmit.textContent = cleanText || 'Get Access';
+                }
+
+                const formMessage = ctaForm ? ctaForm.querySelector('.video-lead-message') : null;
+                if (formMessage) {
+                    formMessage.style.display = 'none';
+                }
+
+                stage.classList.add('show-cta');
+                stage.classList.add('hide-cta-play-badge');
+                stage.classList.remove('is-gated');
+
+                return;
+            }
+
+            ctaOverlay.classList.remove('has-inline-form');
+
+            if (legacyContent) {
+                legacyContent.style.display = '';
+            }
+            if (ctaForm) {
+                ctaForm.style.display = 'none';
+                ctaForm.classList.remove('is-gate-layout');
+                ctaForm.dataset.ctaType = 'email';
+
+                const nameInput = ctaForm.querySelector('input[name="name"]');
+                const emailInput = ctaForm.querySelector('input[name="email"]');
+                if (nameInput) {
+                    nameInput.style.display = 'block';
+                    nameInput.required = true;
+                }
+                if (emailInput) {
+                    emailInput.style.display = 'block';
+                    emailInput.required = true;
+                }
+            }
+            if (gateForm) {
+                gateForm.style.display = 'none';
+                gateForm.classList.remove('is-gate-layout');
+            }
+            const formMessage = ctaForm ? ctaForm.querySelector('.video-lead-message') : null;
+            if (formMessage) {
+                formMessage.style.display = 'none';
+            }
+
+            if (ctaText) {
+                ctaText.textContent = cleanHeroText || 'Ready to take the next step?';
+            }
+
+            if (ctaButton) {
+                ctaButton.style.display = '';
+                ctaButton.textContent = cleanText || 'Learn More';
+                if (ctaButton.tagName === 'A') {
+                    ctaButton.href = cleanURL || '#';
+                    ctaButton.dataset.ctaUrl = cleanURL || '';
+                    ctaButton.target = '_blank';
+                    ctaButton.rel = 'noopener noreferrer';
+                }
+            }
+
+            stage.classList.add('show-cta');
+            stage.classList.add('hide-cta-play-badge');
+            stage.classList.remove('is-gated');
         }
 
         function sendAnalyticsPing(endpoint, id) {
@@ -839,6 +1297,7 @@
             const video = stage.querySelector('video');
             const playBadge = stage.querySelector('.main-play-badge');
             const ctaOverlay = stage.querySelector('.video-cta-overlay');
+            const legacyCTAButton = stage.querySelector('.video-cta-overlay a.video-cta-button[data-cta-track="true"]');
             const ctaSeconds = Number(stage.dataset.ctaSeconds || 0);
             const startSeconds = Number(stage.dataset.startSeconds || 0);
             const shouldAutoplay = stage.dataset.autoplay === 'true';
@@ -901,16 +1360,82 @@
                 }
 
                 if (isEmailGate) {
+                    const legacyContent = stage.querySelector('.video-cta-overlay > .video-cta-content');
+                    const ctaButton = stage.querySelector('.video-cta-button');
+                    const ctaForm = stage.querySelector('.video-cta-form');
+                    const gateForm = stage.querySelector('.video-gate-form');
+                    const gateTitle = stage.querySelector('.gate-form-title');
+                    const gateSubtext = stage.querySelector('.gate-form-subtext');
+                    const gateSubmit = stage.querySelector('.video-gate-submit');
+                    const directGateForm = stage.querySelector('.video-cta-overlay > .video-lead-form[data-cta-type="email_gate"]');
+
                     if (isGateUnlocked()) {
                         stage.classList.remove('show-cta');
                         stage.classList.remove('hide-cta-play-badge');
                         stage.classList.remove('is-gated');
+                        ctaOverlay.classList.remove('has-inline-form');
+                        if (legacyContent) legacyContent.style.display = '';
+                        if (ctaButton) ctaButton.style.display = '';
+                        if (ctaForm) {
+                            ctaForm.style.display = 'none';
+                            ctaForm.classList.remove('is-gate-layout');
+                        }
+                        if (gateForm) {
+                            gateForm.style.display = 'none';
+                            gateForm.classList.remove('is-gate-layout');
+                        }
+                        if (directGateForm) {
+                            directGateForm.style.display = 'none';
+                            directGateForm.classList.remove('is-gate-layout');
+                        }
                         return;
                     }
 
                     stage.classList.add('show-cta');
                     stage.classList.add('hide-cta-play-badge');
                     stage.classList.add('is-gated');
+                    ctaOverlay.classList.remove('has-inline-form');
+
+                    if (legacyContent) legacyContent.style.display = 'none';
+                    if (ctaButton) ctaButton.style.display = 'none';
+                    if (ctaForm) ctaForm.style.display = 'none';
+
+                    if (directGateForm) {
+                        directGateForm.style.display = 'block';
+                        directGateForm.classList.add('is-gate-layout');
+                        const directMessage = directGateForm.querySelector('.video-lead-message');
+                        if (directMessage) directMessage.style.display = 'none';
+                    }
+
+                    if (gateForm) {
+                        gateForm.style.display = 'block';
+                        gateForm.dataset.ctaType = 'email_gate';
+                        gateForm.classList.add('is-gate-layout');
+                        const formMessage = gateForm.querySelector('.video-lead-message');
+                        if (formMessage) formMessage.style.display = 'none';
+                    }
+
+                    if (gateTitle) {
+                        gateTitle.textContent = 'Ready to take the next step?';
+                    }
+
+                    if (gateSubtext) {
+                        gateSubtext.textContent = 'Enter your name and email below to unlock the full video.';
+                    }
+
+                    if (gateSubmit) {
+                        gateSubmit.textContent = 'Get Access';
+                    }
+
+                    if (video && !video.paused) {
+                        video.pause();
+                    }
+
+                    return;
+                }
+
+                if (Array.isArray(timedCTAs) && timedCTAs.length > 0) {
+                    applyTimedCTA(stage, Math.floor(video.currentTime || 0));
                     return;
                 }
 
@@ -923,6 +1448,13 @@
 
                 const shouldShowCTA = video.currentTime >= ctaSeconds;
                 if (shouldShowCTA) {
+                    if (legacyCTAButton) {
+                        const normalizedLegacyURL = normalizeCTAURL(legacyCTAButton.dataset.ctaUrl || legacyCTAButton.getAttribute('href') || '');
+                        legacyCTAButton.href = normalizedLegacyURL || '#';
+                        legacyCTAButton.target = '_blank';
+                        legacyCTAButton.rel = 'noopener noreferrer';
+                    }
+
                     stage.classList.add('show-cta');
                     stage.classList.add('hide-cta-play-badge');
                 } else {
@@ -982,6 +1514,8 @@
                 const stage = form.closest('.video-stage');
                 const stageVideo = stage ? stage.querySelector('video') : null;
                 const isEmailGateForm = form.dataset.ctaType === 'email_gate';
+                const gateForm = stage ? stage.querySelector('.video-gate-form') : null;
+                const directGateForm = stage ? stage.querySelector('.video-cta-overlay > .video-lead-form[data-cta-type="email_gate"]') : null;
                 if (!videoId || !emailInput || !emailInput.value.trim()) return;
                 if (isEmailGateForm && (!nameInput || !nameInput.value.trim())) return;
 
@@ -1010,19 +1544,72 @@
 
                     if (isEmailGateForm && stage && stageVideo) {
                         stage.dataset.gateUnlocked = 'true';
+                        const overlay = stage.querySelector('.video-cta-overlay');
                         const fields = form.querySelector('.video-lead-fields');
                         const submitBtn = form.querySelector('.video-cta-button');
+                        const formCopy = form.querySelector('.video-cta-copy');
+                        const formMessage = form.querySelector('.video-lead-message');
+
                         if (fields) fields.style.display = 'none';
                         if (submitBtn) submitBtn.style.display = 'none';
+                        if (formCopy) formCopy.style.marginBottom = '0';
+                        if (formMessage) formMessage.style.display = 'block';
 
                         setTimeout(() => {
+                            if (overlay) overlay.classList.remove('has-inline-form');
                             stage.classList.remove('show-cta');
                             stage.classList.remove('hide-cta-play-badge');
                             stage.classList.remove('is-gated');
                             form.style.display = 'none';
+                            form.classList.remove('is-gate-layout');
+                            if (fields) fields.style.display = '';
+                            if (submitBtn) submitBtn.style.display = '';
+                            if (formCopy) formCopy.style.marginBottom = '';
+                            if (formMessage) formMessage.style.display = 'none';
+                            if (gateForm) {
+                                gateForm.style.display = 'none';
+                                gateForm.classList.remove('is-gate-layout');
+                            }
+                            if (directGateForm) {
+                                directGateForm.style.display = 'none';
+                                directGateForm.classList.remove('is-gate-layout');
+                            }
                             stageVideo.controls = true;
-                            stageVideo.play().catch(() => {});
-                        }, 1800);
+                            const originalMuted = stageVideo.muted;
+                            stageVideo.muted = true;
+                            stageVideo.play().then(() => {
+                                stageVideo.muted = originalMuted;
+                            }).catch(() => {
+                                stageVideo.muted = originalMuted;
+                            });
+                        }, 1200);
+                    } else if (stage) {
+                        const overlay = stage.querySelector('.video-cta-overlay');
+                        const fields = form.querySelector('.video-lead-fields');
+                        const submitBtn = form.querySelector('.video-cta-button');
+                        const formCopy = form.querySelector('.timed-cta-form-copy');
+                        const currentCTA = getActiveCTA(Math.floor(stageVideo ? stageVideo.currentTime || 0 : 0), stage);
+
+                        if (currentCTA && currentCTA.id) {
+                            setDismissedCTAId(stage, currentCTA.id);
+                        }
+
+                        if (fields) fields.style.display = 'none';
+                        if (submitBtn) submitBtn.style.display = 'none';
+                        if (formCopy) formCopy.style.marginBottom = '0';
+
+                        setTimeout(() => {
+                            if (overlay) overlay.classList.remove('has-inline-form');
+                            stage.classList.remove('show-cta');
+                            stage.classList.remove('hide-cta-play-badge');
+                            form.style.display = 'none';
+                            if (fields) fields.style.display = '';
+                            if (submitBtn) submitBtn.style.display = '';
+                            if (formCopy) formCopy.style.marginBottom = '';
+                            if (stageVideo) {
+                                stageVideo.play().catch(() => {});
+                            }
+                        }, 1200);
                     }
                 } catch (error) {
                     if (message) {
@@ -1034,9 +1621,19 @@
             });
         });
         document.querySelectorAll('[data-cta-track="true"]').forEach((link) => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', (event) => {
                 const videoId = link.dataset.videoId;
                 if (!videoId) return;
+
+                const normalizedURL = normalizeCTAURL(link.dataset.ctaUrl || link.getAttribute('href') || '');
+                if (!normalizedURL) {
+                    event.preventDefault();
+                    return;
+                }
+
+                link.href = normalizedURL;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
 
                 const payload = JSON.stringify({ videoId });
 

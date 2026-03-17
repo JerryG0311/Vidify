@@ -537,8 +537,8 @@
                 </div>
                 <div class="retention-summary">
                     <div class="retention-pill">
-                        <div class="retention-pill-label">Highest Retention</div>
-                        <div class="retention-pill-value">{{.RetentionPeak}}</div>
+                        <div class="retention-pill-label">Starting Viewers</div>
+                        <div id="retentionStartingViewers" class="retention-pill-value">{{.RetentionPeak}}</div>
                     </div>
                     <div class="retention-pill">
                         <div class="retention-pill-label">Furthest Watch Point</div>
@@ -572,16 +572,17 @@
             const innerWidth = width - padding.left - padding.right;
             const innerHeight = height - padding.top - padding.bottom;
 
-            const maxViews = Math.max(...retentionData.map(point => point.views), 1);
+            const startingViews = Math.max(retentionData[0]?.views || 0, 1);
             const maxSecond = Math.max(...retentionData.map(point => point.second), 1);
 
             const x = (second) => padding.left + (second / maxSecond) * innerWidth;
-            const y = (views) => padding.top + innerHeight - (views / maxViews) * innerHeight;
+            const toPercent = (views) => Math.max(0, Math.min(100, (views / startingViews) * 100));
+            const y = (views) => padding.top + innerHeight - (toPercent(views) / 100) * innerHeight;
 
             const gridValues = [0, 0.25, 0.5, 0.75, 1];
             const gridLines = gridValues.map((step) => {
                 const yPos = padding.top + innerHeight - innerHeight * step;
-                const label = Math.round(maxViews * step);
+                const label = `${Math.round(step * 100)}%`;
                 return `
                     <line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}"></line>
                     <text class="chart-axis-label" x="${padding.left - 10}" y="${yPos + 4}" text-anchor="end">${label}</text>
@@ -599,8 +600,13 @@
                 y: y(point.views)
             }));
 
-            // Simple insight logic
             const insightEl = document.getElementById('retentionInsight');
+            const startingViewersEl = document.getElementById('retentionStartingViewers');
+
+            if (startingViewersEl) {
+                startingViewersEl.textContent = String(startingViews);
+            }
+
             if (insightEl && retentionData.length > 1) {
                 const first = retentionData[0].views;
                 const midIndex = Math.floor(retentionData.length * 0.25);

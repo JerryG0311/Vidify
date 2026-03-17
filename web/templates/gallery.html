@@ -208,6 +208,261 @@
         .tab-btn.inactive {
             color: #9ca3af;
         }
+
+        .cta-modal-content {
+            background: #181818;
+            padding: 26px;
+            border-radius: 16px;
+            width: min(980px, 94vw);
+            max-width: 980px;
+            max-height: 88vh;
+            position: relative;
+            text-align: left;
+            color: #ffffff;
+            border: 1px solid #282828;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .cta-modal-subtext {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .cta-builder {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 18px;
+            min-height: 480px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .cta-sidebar {
+            background: #101010;
+            border: 1px solid #282828;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .cta-sidebar-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .cta-sidebar-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .cta-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        .cta-list-item {
+            width: 100%;
+            text-align: left;
+            background: #171717;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+
+        .cta-list-item.active {
+            border-color: #00adef;
+            box-shadow: 0 0 0 1px rgba(0, 173, 239, 0.25);
+        }
+
+        .cta-list-item-title {
+            font-weight: 800;
+            margin-bottom: 4px;
+            color: #ffffff;
+        }
+
+        .cta-list-item-meta {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .cta-add-btn {
+            width: 100%;
+            background: #2a2a2a;
+            color: #ffffff;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .cta-editor {
+            background: #101010;
+            border: 1px solid #282828;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .cta-empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 320px;
+            color: #6b7280;
+            border: 1px dashed rgba(255,255,255,0.12);
+            border-radius: 12px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .cta-editor-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+
+        .cta-editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .cta-editor-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .cta-form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        .cta-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .cta-field span {
+            font-size: 13px;
+            color: #d1d5db;
+            font-weight: 700;
+        }
+
+        .cta-field small {
+            color: #6b7280;
+            line-height: 1.45;
+        }
+
+        .cta-field input,
+        .cta-field select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #282828;
+            border-radius: 8px;
+            background: #101010;
+            color: #ffffff;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .cta-field input:focus,
+        .cta-field select:focus {
+            border-color: #00adef;
+            box-shadow: 0 0 0 3px rgba(0, 173, 239, 0.12);
+        }
+
+        .cta-editor-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .cta-modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid #282828;
+        }
+
+        .cta-modal-footer button {
+            flex: 1;
+        }
+
+        .cta-secondary-btn {
+            background: #2a2a2a;
+            color: #ffffff;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .cta-primary-btn {
+            background: #00adef;
+            color: #ffffff;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .cta-danger-btn {
+            background: #7f1d1d;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .cta-builder {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-editor-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .cta-modal-footer {
+                flex-direction: column;
+            }
+        }
+
     </style>
 </head>
 <body class="list-view">
@@ -264,7 +519,7 @@
                                     {{if eq .Status "COMPLETED"}}
                                     <button onclick="window.location.href='/stats/{{.ID}}'">Stats</button>
                                     <button onclick="openThumbModal('{{.ID}}', '{{.ThumbnailURL}}')">Edit Thumbnail</button>
-                                    <button onclick="openCTAModal('{{.ID}}', '{{js .CTAText}}', '{{js .CTAURL}}', '{{.CTATimeSeconds}}', '{{.CTAType}}')">CTA Manager</button>
+                                    <button onclick="openCTAModal('{{.ID}}', '{{js .CTAText}}', '{{js .CTAURL}}', '{{.CTATimeSeconds}}', '{{.CTAType}}', '{{js .CTAHeroText}}')">CTA Manager</button>
                                     <button data-player-autoplay="{{if .PlayerAutoplay}}true{{else}}false{{end}}" data-player-muted="{{if .PlayerMuted}}true{{else}}false{{end}}" data-player-controls="{{if .PlayerControls}}true{{else}}false{{end}}" data-player-start="{{.PlayerStartSeconds}}" onclick="openPlayerModalFromButton(this, '{{.ID}}')">Player Settings</button>
                                     {{end}}
                                     <form action="/delete/{{.ID}}" method="POST" onsubmit="return confirm('Delete video?');">
@@ -299,43 +554,102 @@
     </div>
 
     <div id="ctaModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content cta-modal-content">
             <button onclick="closeCTAModal()" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:24px; cursor:pointer; color:#a0aec0;">&times;</button>
             <h2>CTA Manager</h2>
             <form id="ctaForm" method="POST">
-                <div class="modal-field">
-                    <label for="ctaTextInput">CTA Button Text</label>
-                    <input id="ctaTextInput" type="text" name="cta_text" placeholder="Get Access">
-                    <div class="modal-helper">This is the text viewers will see on the CTA button.</div>
+                <div class="modal-helper cta-modal-subtext">Create one CTA or add multiple CTAs that appear at different times in the video.</div>
+
+                <div class="cta-builder">
+                    <aside class="cta-sidebar">
+                        <div class="cta-sidebar-header">
+                            <h3 class="cta-sidebar-title">CTAs</h3>
+                            <button type="button" class="cta-add-btn" onclick="addCTAItem()">+ Add CTA</button>
+                        </div>
+                        <div id="ctaList" class="cta-list"></div>
+                    </aside>
+
+                    <section class="cta-editor">
+                        <div id="ctaEmptyState" class="cta-empty-state">Select a CTA to edit</div>
+
+                        <div id="ctaEditorPanel" class="cta-editor-panel" style="display:none;">
+                            <div class="cta-editor-header">
+                                <h3 id="ctaEditorTitle" class="cta-editor-title">CTA 1</h3>
+                                <button type="button" class="cta-danger-btn" onclick="removeSelectedCTA()">Remove</button>
+                            </div>
+
+                            <div class="cta-form-grid">
+                                <label class="cta-field">
+                                    <span>CTA Type</span>
+                                    <select id="ctaTypeInput">
+                                        <option value="button">Button CTA</option>
+                                        <option value="email">Email Capture (Timed)</option>
+                                        <option value="email_gate">Email Gate (Unlock Video)</option>
+                                    </select>
+                                    <small>Choose whether the viewer clicks a link or enters their email.</small>
+                                </label>
+
+                                <label class="cta-field">
+                                    <span>Hero Title</span>
+                                    <input id="ctaHeroInput" type="text" placeholder="Ready to take the next step?">
+                                    <small>This is the main headline shown above the CTA button or form.</small>
+                                </label>
+
+                                <div id="buttonFields" class="cta-editor-section">
+                                    <label class="cta-field">
+                                        <span>CTA Button Text</span>
+                                        <input id="ctaButtonTextInput" type="text" placeholder="Learn More">
+                                        <small>This is the text viewers will see on the CTA button.</small>
+                                    </label>
+
+                                    <label class="cta-field">
+                                        <span>CTA URL</span>
+                                        <input id="ctaURLInput" type="url" placeholder="https://your-link.com">
+                                        <small>Where should the viewer go when they click the CTA?</small>
+                                    </label>
+
+                                    <label class="cta-field">
+                                        <span>Show CTA At (seconds)</span>
+                                        <input id="ctaTimeInput" type="number" min="0" placeholder="45">
+                                        <small>Example: enter 45 to show the CTA 45 seconds into the video.</small>
+                                    </label>
+                                </div>
+
+                                <div id="emailFields" class="cta-editor-section" style="display:none;">
+                                    <label class="cta-field">
+                                        <span>Email CTA Text</span>
+                                        <input id="ctaEmailTextInput" type="text" placeholder="Get Access">
+                                        <small>This is the text viewers will see before they enter their email.</small>
+                                    </label>
+
+                                    <label class="cta-field">
+                                        <span>Show Email Capture At (seconds)</span>
+                                        <input id="ctaEmailTimeInput" type="number" min="0" placeholder="45">
+                                        <small>Example: enter 45 to show the email capture 45 seconds into the video.</small>
+                                    </label>
+                                </div>
+
+                                <div id="gateFields" class="cta-editor-section" style="display:none;">
+                                    <label class="cta-field">
+                                        <span>Email Gate Text</span>
+                                        <input id="ctaGateTextInput" type="text" placeholder="Get Access">
+                                        <small>This is the text viewers will see before they unlock the video.</small>
+                                    </label>
+
+                                    <label class="cta-field">
+                                        <span>Gate At (seconds)</span>
+                                        <input id="ctaGateTimeInput" type="number" min="0" placeholder="0">
+                                        <small>Use 0 to gate the video immediately, or enter a later second.</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
-                <div class="modal-field">
-                    <label for="ctaTypeInput">CTA Type</label>
-                    <select id="ctaTypeInput" name="cta_type" style="width:100%; padding:12px 14px; border:1px solid #282828; border-radius:8px; background:#101010; color:#ffffff; box-sizing:border-box; outline:none;">
-                        <option value="button">Button CTA</option>
-                        <option value="email">Email Capture (Timed)</option>
-                        <option value="email_gate">Email Gate (Unlock Video)</option>
-                    </select>
-                    <div class="modal-helper">
-                        Choose whether the viewer clicks a link or enters their email.
-                    </div>
-                </div>
-
-                <div class="modal-field">
-                    <label for="ctaUrlInput">CTA URL</label>
-                    <input id="ctaUrlInput" type="url" name="cta_url" placeholder="https://your-link.com">
-                    <div class="modal-helper">Where should the viewer go when they click the CTA?</div>
-                </div>
-
-                <div class="modal-field">
-                    <label for="ctaTimeInput">Show CTA At (seconds)</label>
-                    <input id="ctaTimeInput" type="number" min="0" name="cta_time_seconds" placeholder="45">
-                    <div class="modal-helper">Example: enter 45 to show the CTA 45 seconds into the video.</div>
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:6px;">
-                    <button type="button" onclick="clearCTAFields()" style="flex:1; background:#2a2a2a; color:#ffffff; padding:12px; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Clear CTA</button>
-                    <button type="submit" style="flex:1; background:#00adef; color:white; padding:12px; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Save CTA Settings</button>
+                <div class="cta-modal-footer">
+                    <button type="button" class="cta-secondary-btn" onclick="closeCTAModal()">Cancel</button>
+                    <button type="submit" class="cta-primary-btn">Save CTA Settings</button>
                 </div>
             </form>
         </div>
@@ -436,6 +750,7 @@
             </form>
         </div>
     </div>
+
 
     <script>
         function toggleView(view) {
@@ -591,18 +906,24 @@
         }
         function closeThumbModal() { document.getElementById('thumbModal').style.display = 'none'; }
 
-        function openCTAModal(id, text, url, timeSeconds, ctaType) {
+        function openCTAModal(id, text, url, timeSeconds, ctaType, heroText) {
             document.getElementById('ctaModal').style.display = 'flex';
-            document.getElementById('ctaForm').action = `/manage-cta/${id}`;
-            document.getElementById('ctaTextInput').value = text || '';
-            document.getElementById('ctaUrlInput').value = url || '';
-            document.getElementById('ctaTimeInput').value = timeSeconds && timeSeconds !== '0' ? timeSeconds : '';
-            document.getElementById('ctaTypeInput').value =
-                ctaType === 'email_gate' ? 'email_gate' : (ctaType === 'email' ? 'email' : 'button');
+            loadCTAItems(id, text || '', url || '', timeSeconds || '', ctaType || 'button', heroText || '');
         }
 
         function closeCTAModal() {
             document.getElementById('ctaModal').style.display = 'none';
+            currentCTAVideoId = '';
+            ctaItemsState = [];
+            selectedCTAIndex = -1;
+
+            const ctaList = document.getElementById('ctaList');
+            if (ctaList) ctaList.innerHTML = '';
+
+            const emptyState = document.getElementById('ctaEmptyState');
+            const panel = document.getElementById('ctaEditorPanel');
+            if (emptyState) emptyState.style.display = 'flex';
+            if (panel) panel.style.display = 'none';
         }
 
         function openPlayerModalFromButton(button, id) {
@@ -648,18 +969,288 @@
             }
         }
 
-        function clearCTAFields() {
-            document.getElementById('ctaTextInput').value = '';
-            document.getElementById('ctaUrlInput').value = '';
-            document.getElementById('ctaTimeInput').value = '';
-            document.getElementById('ctaTypeInput').value = 'button';
+        let currentCTAVideoId = '';
+        let ctaItemsState = [];
+        let selectedCTAIndex = -1;
+
+
+        function addCTAItem(type = 'button', heroText = '', text = '', url = '', timeSeconds = '') {
+            ctaItemsState.push({
+                type: type || 'button',
+                heroText: heroText || '',
+                text: text || '',
+                url: url || '',
+                timeSeconds: timeSeconds && timeSeconds !== '0' ? String(timeSeconds) : ''
+            });
+            selectedCTAIndex = ctaItemsState.length - 1;
+            renderCTAList();
+            renderCTAEditor();
         }
+
+        function formatCTATime(seconds) {
+            const value = Number(seconds || 0);
+            const mins = Math.floor(value / 60);
+            const secs = value % 60;
+            return `${mins}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function getCTATypeLabel(type) {
+            if (type === 'button') return 'Button CTA';
+            if (type === 'email') return 'Email Capture';
+            if (type === 'email_gate') return 'Email Gate';
+            return 'CTA';
+        }
+
+        function getSelectedCTA() {
+            return ctaItemsState[selectedCTAIndex] || null;
+        }
+
+        function renderCTAList() {
+            const list = document.getElementById('ctaList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            ctaItemsState.forEach((cta, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `cta-list-item ${index === selectedCTAIndex ? 'active' : ''}`;
+                button.innerHTML = `
+                    <div class="cta-list-item-title">CTA ${index + 1}</div>
+                    <div class="cta-list-item-meta">${getCTATypeLabel(cta.type)} · ${formatCTATime(cta.timeSeconds || 0)}</div>
+                `;
+                button.addEventListener('click', () => {
+                    selectedCTAIndex = index;
+                    renderCTAList();
+                    renderCTAEditor();
+                });
+                list.appendChild(button);
+            });
+        }
+
+        function updateCTAEditorVisibility(type) {
+            const buttonFields = document.getElementById('buttonFields');
+            const emailFields = document.getElementById('emailFields');
+            const gateFields = document.getElementById('gateFields');
+            if (!buttonFields || !emailFields || !gateFields) return;
+
+            buttonFields.style.display = type === 'button' ? 'flex' : 'none';
+            emailFields.style.display = type === 'email' ? 'flex' : 'none';
+            gateFields.style.display = type === 'email_gate' ? 'flex' : 'none';
+        }
+
+        function renderCTAEditor() {
+            const emptyState = document.getElementById('ctaEmptyState');
+            const panel = document.getElementById('ctaEditorPanel');
+            const cta = getSelectedCTA();
+            if (!emptyState || !panel) return;
+
+            if (!cta) {
+                emptyState.style.display = 'flex';
+                panel.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            panel.style.display = 'flex';
+
+            document.getElementById('ctaEditorTitle').textContent = `CTA ${selectedCTAIndex + 1}`;
+            document.getElementById('ctaTypeInput').value = cta.type || 'button';
+            document.getElementById('ctaHeroInput').value = cta.heroText || '';
+            document.getElementById('ctaButtonTextInput').value = cta.type === 'button' ? (cta.text || '') : '';
+            document.getElementById('ctaURLInput').value = cta.type === 'button' ? (cta.url || '') : '';
+            document.getElementById('ctaTimeInput').value = cta.type === 'button' ? (cta.timeSeconds || '') : '';
+            document.getElementById('ctaEmailTextInput').value = cta.type === 'email' ? (cta.text || '') : '';
+            document.getElementById('ctaEmailTimeInput').value = cta.type === 'email' ? (cta.timeSeconds || '') : '';
+            document.getElementById('ctaGateTextInput').value = cta.type === 'email_gate' ? (cta.text || '') : '';
+            document.getElementById('ctaGateTimeInput').value = cta.type === 'email_gate' ? (cta.timeSeconds || '') : '';
+
+            updateCTAEditorVisibility(cta.type || 'button');
+        }
+
+        function syncSelectedCTAFromEditor() {
+            const cta = getSelectedCTA();
+            if (!cta) return;
+
+            const type = document.getElementById('ctaTypeInput').value;
+            cta.type = type;
+            cta.heroText = document.getElementById('ctaHeroInput').value.trim();
+
+            if (type === 'button') {
+                cta.text = document.getElementById('ctaButtonTextInput').value.trim();
+                cta.url = document.getElementById('ctaURLInput').value.trim();
+                cta.timeSeconds = document.getElementById('ctaTimeInput').value.trim();
+            } else if (type === 'email') {
+                cta.text = document.getElementById('ctaEmailTextInput').value.trim();
+                cta.url = '';
+                cta.timeSeconds = document.getElementById('ctaEmailTimeInput').value.trim();
+            } else {
+                cta.text = document.getElementById('ctaGateTextInput').value.trim();
+                cta.url = '';
+                cta.timeSeconds = document.getElementById('ctaGateTimeInput').value.trim();
+            }
+
+            renderCTAList();
+        }
+
+        function removeSelectedCTA() {
+            if (selectedCTAIndex < 0 || selectedCTAIndex >= ctaItemsState.length) return;
+            ctaItemsState.splice(selectedCTAIndex, 1);
+
+            if (ctaItemsState.length === 0) {
+                selectedCTAIndex = -1;
+            } else if (selectedCTAIndex >= ctaItemsState.length) {
+                selectedCTAIndex = ctaItemsState.length - 1;
+            }
+
+            renderCTAList();
+            renderCTAEditor();
+        }
+
+        async function loadCTAItems(videoId, legacyText, legacyURL, legacyTimeSeconds, legacyType, legacyHeroText) {
+            currentCTAVideoId = videoId;
+
+            ctaItemsState = [];
+            selectedCTAIndex = -1;
+
+            try {
+                const response = await fetch(`/cta-timeline/${videoId}`);
+                const ctas = await response.json();
+
+                if (Array.isArray(ctas) && ctas.length > 0) {
+                    ctas.forEach((cta, index) => {
+                        const resolvedType = cta.ctaType || (index === 0 ? (legacyType || 'button') : 'button');
+                        const resolvedURL = resolvedType === 'button' ? (cta.url || '') : '';
+                        addCTAItem(resolvedType, cta.heroText || '', cta.text || '', resolvedURL, cta.timeSeconds ?? '');
+                    });
+                } else if (legacyHeroText || legacyText || legacyURL || (legacyTimeSeconds && legacyTimeSeconds !== '0')) {
+                    addCTAItem(legacyType || 'button', legacyHeroText || '', legacyText || '', legacyURL || '', legacyTimeSeconds || '');
+                } else {
+                    addCTAItem();
+                }
+            } catch (error) {
+                console.error('Failed to load CTA timeline', error);
+                if (legacyHeroText || legacyText || legacyURL || (legacyTimeSeconds && legacyTimeSeconds !== '0')) {
+                    addCTAItem(legacyType || 'button', legacyHeroText || '', legacyText || '', legacyURL || '', legacyTimeSeconds || '');
+                } else {
+                    addCTAItem();
+                }
+            }
+
+            if (ctaItemsState.length > 0 && selectedCTAIndex === -1) {
+                selectedCTAIndex = 0;
+            }
+            renderCTAList();
+            renderCTAEditor();
+        }
+
+        async function saveCTAItems(event) {
+            event.preventDefault();
+            if (!currentCTAVideoId) return;
+
+            syncSelectedCTAFromEditor();
+
+            const normalized = ctaItemsState.map((cta) => ({
+                type: cta.type || 'button',
+                heroText: (cta.heroText || '').trim(),
+                text: (cta.text || '').trim(),
+                url: (cta.url || '').trim(),
+                timeSeconds: (cta.timeSeconds || '').trim()
+            })).filter((cta) => cta.heroText || cta.text || cta.url || cta.timeSeconds);
+
+            const invalidCTA = normalized.find((cta) => {
+                if (cta.type === 'button') {
+                    return !cta.text || !cta.url;
+                }
+                return !cta.text;
+            });
+
+            if (invalidCTA) {
+                alert('Each CTA needs the required fields filled out before saving.');
+                return;
+            }
+
+            const primary = normalized[0] || { type: 'button', heroText: '', text: '', url: '', timeSeconds: '' };
+
+            const legacyBody = new URLSearchParams();
+            legacyBody.append('cta_hero_text', primary.heroText || '');
+            legacyBody.append('cta_text', primary.text || '');
+            legacyBody.append('cta_url', primary.type === 'button' ? (primary.url || '') : '');
+            legacyBody.append('cta_time_seconds', primary.timeSeconds || '0');
+            legacyBody.append('cta_type', primary.type || 'button');
+
+            await fetch(`/manage-cta/${currentCTAVideoId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: legacyBody.toString()
+            });
+
+            const timelineBody = new URLSearchParams();
+            normalized.forEach((cta) => {
+                timelineBody.append('cta_hero_text[]', cta.heroText || '');
+                timelineBody.append('cta_text[]', cta.text || '');
+                timelineBody.append('cta_url[]', cta.type === 'button' ? (cta.url || '') : '');
+                timelineBody.append('cta_type[]', cta.type || 'button');
+                timelineBody.append('cta_time_seconds[]', cta.timeSeconds || '0');
+            });
+
+            await fetch(`/manage-cta-timeline/${currentCTAVideoId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: timelineBody.toString()
+            });
+
+            closeCTAModal();
+            window.location.reload();
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
             const autoplayInput = document.getElementById('playerAutoplayInput');
             if (autoplayInput) {
                 autoplayInput.addEventListener('change', syncPlayerAutoplayState);
             }
+
+            const ctaForm = document.getElementById('ctaForm');
+            if (ctaForm) {
+                ctaForm.addEventListener('submit', saveCTAItems);
+            }
+
+            const ctaTypeInput = document.getElementById('ctaTypeInput');
+            const ctaHeroInput = document.getElementById('ctaHeroInput');
+            const ctaButtonTextInput = document.getElementById('ctaButtonTextInput');
+            const ctaURLInput = document.getElementById('ctaURLInput');
+            const ctaTimeInput = document.getElementById('ctaTimeInput');
+            const ctaEmailTextInput = document.getElementById('ctaEmailTextInput');
+            const ctaEmailTimeInput = document.getElementById('ctaEmailTimeInput');
+            const ctaGateTextInput = document.getElementById('ctaGateTextInput');
+            const ctaGateTimeInput = document.getElementById('ctaGateTimeInput');
+
+            if (ctaTypeInput) {
+                ctaTypeInput.addEventListener('change', (event) => {
+                    updateCTAEditorVisibility(event.target.value);
+                    syncSelectedCTAFromEditor();
+                    renderCTAList();
+                });
+            }
+
+            [
+                ctaHeroInput,
+                ctaButtonTextInput,
+                ctaURLInput,
+                ctaTimeInput,
+                ctaEmailTextInput,
+                ctaEmailTimeInput,
+                ctaGateTextInput,
+                ctaGateTimeInput
+            ].forEach((input) => {
+                if (!input) return;
+                input.addEventListener('input', () => {
+                    syncSelectedCTAFromEditor();
+                });
+            });
         });
+
+    
     </script>
 </body>
 </html>

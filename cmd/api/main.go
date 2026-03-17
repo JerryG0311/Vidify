@@ -36,6 +36,7 @@ type VideoData struct {
 	CreatedAt          time.Time
 	Status             string
 	CTAText            string
+	CTAHeroText        string
 	CTAURL             string
 	CTATimeSeconds     int
 	CTAType            string
@@ -85,10 +86,22 @@ type PlayerOptions struct {
 	StartSeconds int
 }
 
+type VideoCTA struct {
+	ID          string    `json:"id"`
+	VideoID     string    `json:"videoId"`
+	Text        string    `json:"text"`
+	HeroText    string    `json:"heroText"`
+	URL         string    `json:"url"`
+	CTAType     string    `json:"ctaType"`
+	TimeSeconds int       `json:"timeSeconds"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
 type ViewPageData struct {
 	Video         VideoData
 	Creator       ProfileData
 	RelatedVideos []VideoData
+	CTAs          []VideoCTA
 	IsEmbed       bool
 	PlayerOptions PlayerOptions
 }
@@ -235,6 +248,7 @@ func renderVideoPage(db *sql.DB, w http.ResponseWriter, r *http.Request, id stri
 		created_at, 
 		status, 
 		IFNULL(cta_text, ''), 
+		IFNULL(cta_hero_text, ''),
 		IFNULL(cta_url, ''), 
 		IFNULL(cta_time_seconds, 0), 
 		IFNULL(cta_type, 'button'),
@@ -258,6 +272,7 @@ func renderVideoPage(db *sql.DB, w http.ResponseWriter, r *http.Request, id stri
 		&v.CreatedAt,
 		&v.Status,
 		&v.CTAText,
+		&v.CTAHeroText,
 		&v.CTAURL,
 		&v.CTATimeSeconds,
 		&v.CTAType,
@@ -301,6 +316,37 @@ func renderVideoPage(db *sql.DB, w http.ResponseWriter, r *http.Request, id stri
 	)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("Creator lookup error for video %s: %v", v.ID, err)
+	}
+
+	var ctas []VideoCTA
+	ctaRows, err := db.Query(`
+		SELECT id, video_id, cta_text, IFNULL(cta_hero_text, ''), cta_url, IFNULL(cta_type, 'button'), cta_time_seconds, created_at
+		FROM video_ctas
+		WHERE video_id = ?
+		ORDER BY cta_time_seconds ASC, created_at ASC
+	`, v.ID)
+	if err == nil {
+		defer ctaRows.Close()
+
+		for ctaRows.Next() {
+			var cta VideoCTA
+			if err := ctaRows.Scan(
+				&cta.ID,
+				&cta.VideoID,
+				&cta.Text,
+				&cta.HeroText,
+				&cta.URL,
+				&cta.CTAType,
+				&cta.TimeSeconds,
+				&cta.CreatedAt,
+			); err != nil {
+				log.Printf("CTA scan error for %s: %v", v.ID, err)
+				continue
+			}
+			ctas = append(ctas, cta)
+		}
+	} else {
+		log.Printf("CTA query error for %s: %v", v.ID, err)
 	}
 
 	var relatedVideos []VideoData
@@ -357,6 +403,7 @@ func renderVideoPage(db *sql.DB, w http.ResponseWriter, r *http.Request, id stri
 		Video:         v,
 		Creator:       creator,
 		RelatedVideos: relatedVideos,
+		CTAs:          ctas,
 		IsEmbed:       isEmbed,
 		PlayerOptions: playerOptions,
 	}
@@ -932,7 +979,7 @@ func main() {
 		}
 
 		// 1. Fetch only videos belonging to THIS logged-in user
-		rows, err := db.Query("SELECT id, status, title, playlist, source_path, thumbnail_url, views, IFNULL(cta_text, ''), IFNULL(cta_url, ''), IFNULL(cta_time_seconds, 0), IFNULL(cta_type, 'button'), IFNULL(player_autoplay, 0), IFNULL(player_muted, 0), IFNULL(player_controls, 1), IFNULL(player_start_seconds, 0) FROM videos WHERE user_id = ? ORDER BY created_at DESC", userEmail)
+		rows, err := db.Query("SELECT id, status, title, playlist, source_path, thumbnail_url, views, IFNULL(cta_text, ''), IFNULL(cta_hero_text, ''), IFNULL(cta_url, ''), IFNULL(cta_time_seconds, 0), IFNULL(cta_type, 'button'), IFNULL(player_autoplay, 0), IFNULL(player_muted, 0), IFNULL(player_controls, 1), IFNULL(player_start_seconds, 0) FROM videos WHERE user_id = ? ORDER BY created_at DESC", userEmail)
 		if err != nil {
 			log.Printf("Database Query Error: %v", err)
 			http.Error(w, "Unable to load your library", http.StatusInternalServerError)
@@ -946,7 +993,7 @@ func main() {
 			var thumb, playlist sql.NullString
 
 			// scan into NullStrings
-			err := rows.Scan(&v.ID, &v.Status, &v.Title, &playlist, &v.SourcePath, &thumb, &v.Views, &v.CTAText, &v.CTAURL, &v.CTATimeSeconds, &v.CTAType, &v.PlayerAutoplay, &v.PlayerMuted, &v.PlayerControls, &v.PlayerStartSeconds)
+			err := rows.Scan(&v.ID, &v.Status, &v.Title, &playlist, &v.SourcePath, &thumb, &v.Views, &v.CTAText, &v.CTAHeroText, &v.CTAURL, &v.CTATimeSeconds, &v.CTAType, &v.PlayerAutoplay, &v.PlayerMuted, &v.PlayerControls, &v.PlayerStartSeconds)
 			if err != nil {
 				log.Printf("Scan error for video %s: %v", v.ID, err)
 				continue
@@ -1214,6 +1261,7 @@ func main() {
 		}
 
 		ctaText := strings.TrimSpace(r.FormValue("cta_text"))
+		ctaHeroText := strings.TrimSpace(r.FormValue("cta_hero_text"))
 		ctaURL := strings.TrimSpace(r.FormValue("cta_url"))
 		ctaType := strings.TrimSpace(r.FormValue("cta_type"))
 		if ctaType != "email" && ctaType != "email_gate" {
@@ -1232,6 +1280,7 @@ func main() {
 		if ctaType == "email" || ctaType == "email_gate" {
 			if ctaText == "" {
 				ctaText = ""
+				ctaHeroText = ""
 				ctaURL = ""
 				ctaTimeSeconds = 0
 				ctaType = "button"
@@ -1244,6 +1293,7 @@ func main() {
 		} else {
 			if ctaText == "" || ctaURL == "" {
 				ctaText = ""
+				ctaHeroText = ""
 				ctaURL = ""
 				ctaTimeSeconds = 0
 				ctaType = "button"
@@ -1251,8 +1301,9 @@ func main() {
 		}
 
 		result, err := db.Exec(
-			"UPDATE videos SET cta_text = ?, cta_url = ?, cta_time_seconds = ?, cta_type = ? WHERE id = ? AND user_id = ?",
+			"UPDATE videos SET cta_text = ?, cta_hero_text = ?, cta_url = ?, cta_time_seconds = ?, cta_type = ? WHERE id = ? AND user_id = ?",
 			ctaText,
+			ctaHeroText,
 			ctaURL,
 			ctaTimeSeconds,
 			ctaType,
@@ -1268,6 +1319,177 @@ func main() {
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
 			log.Printf("CTA update skipped for %s: no matching video for user %s", id, userEmail)
+		}
+
+		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/cta-timeline/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		id := filepath.Base(r.URL.Path)
+		if id == "" {
+			http.Error(w, "missing video id", http.StatusBadRequest)
+			return
+		}
+
+		var ownerEmail string
+		err := db.QueryRow("SELECT user_id FROM videos WHERE id = ?", id).Scan(&ownerEmail)
+		if err != nil {
+			http.Error(w, "video not found", http.StatusNotFound)
+			return
+		}
+		if ownerEmail != userEmail {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		rows, err := db.Query(`
+			SELECT id, video_id, cta_text, IFNULL(cta_hero_text, ''), cta_url, IFNULL(cta_type, 'button'), cta_time_seconds, created_at
+			FROM video_ctas
+			WHERE video_id = ?
+			ORDER BY cta_time_seconds ASC, created_at ASC
+		`, id)
+		if err != nil {
+			http.Error(w, "failed to load CTAs", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var ctas []VideoCTA
+		for rows.Next() {
+			var cta VideoCTA
+			if err := rows.Scan(
+				&cta.ID,
+				&cta.VideoID,
+				&cta.Text,
+				&cta.HeroText,
+				&cta.URL,
+				&cta.CTAType,
+				&cta.TimeSeconds,
+				&cta.CreatedAt,
+			); err != nil {
+				log.Printf("CTA timeline scan error for %s: %v", id, err)
+				continue
+			}
+			ctas = append(ctas, cta)
+		}
+
+		writeJSON(w, http.StatusOK, ctas)
+	})
+
+	http.HandleFunc("/manage-cta-timeline/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		id := filepath.Base(r.URL.Path)
+		if id == "" {
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		var ownerEmail string
+		err := db.QueryRow("SELECT user_id FROM videos WHERE id = ?", id).Scan(&ownerEmail)
+		if err != nil {
+			log.Printf("CTA timeline owner lookup error for %s: %v", id, err)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+		if ownerEmail != userEmail {
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			log.Printf("CTA timeline parse error for %s: %v", id, err)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		texts := r.Form["cta_text[]"]
+		heroTexts := r.Form["cta_hero_text[]"]
+		urls := r.Form["cta_url[]"]
+		types := r.Form["cta_type[]"]
+		times := r.Form["cta_time_seconds[]"]
+
+		tx, err := db.Begin()
+		if err != nil {
+			log.Printf("CTA timeline tx begin error for %s: %v", id, err)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+		defer tx.Rollback()
+
+		if _, err := tx.Exec("DELETE FROM video_ctas WHERE video_id = ?", id); err != nil {
+			log.Printf("CTA timeline delete error for %s: %v", id, err)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
+		}
+
+		for i := 0; i < len(texts) && i < len(heroTexts) && i < len(urls) && i < len(types) && i < len(times); i++ {
+			text := strings.TrimSpace(texts[i])
+			heroText := strings.TrimSpace(heroTexts[i])
+			url := strings.TrimSpace(urls[i])
+			ctaType := strings.TrimSpace(types[i])
+			timeRaw := strings.TrimSpace(times[i])
+
+			if ctaType != "email" && ctaType != "email_gate" {
+				ctaType = "button"
+			}
+
+			if text == "" || timeRaw == "" {
+				continue
+			}
+
+			var timeSeconds int
+			if _, err := fmt.Sscanf(timeRaw, "%d", &timeSeconds); err != nil || timeSeconds < 0 {
+				continue
+			}
+
+			if ctaType == "button" {
+				if url == "" {
+					continue
+				}
+			} else {
+				url = "__email_capture__"
+				if ctaType == "email_gate" {
+					timeSeconds = 0
+				}
+			}
+
+			ctaID := fmt.Sprintf("cta-%d-%d", time.Now().UnixNano(), i)
+
+			if _, err := tx.Exec(`
+				INSERT INTO video_ctas (id, video_id, cta_text, cta_hero_text, cta_url, cta_type, cta_time_seconds)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`, ctaID, id, text, heroText, url, ctaType, timeSeconds); err != nil {
+				log.Printf("CTA timeline insert error for %s: %v", id, err)
+				http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+				return
+			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			log.Printf("CTA timeline commit error for %s: %v", id, err)
+			http.Redirect(w, r, "/gallery", http.StatusSeeOther)
+			return
 		}
 
 		http.Redirect(w, r, "/gallery", http.StatusSeeOther)
