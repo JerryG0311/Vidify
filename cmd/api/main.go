@@ -1578,7 +1578,37 @@ func main() {
 			return
 		}
 
-		_, err := db.Exec("INSERT OR IGNORE INTO leads (video_id, email, name) VALUES (?, ?, ?)", id, email, name)
+		ctaID := strings.TrimSpace(r.FormValue("cta_id"))
+		ctaType := strings.TrimSpace(r.FormValue("cta_type"))
+		ctaHeroText := strings.TrimSpace(r.FormValue("cta_hero_text"))
+		ctaTimeSeconds := 0
+		ctaTimeRaw := strings.TrimSpace(r.FormValue("cta_time_seconds"))
+		if ctaTimeRaw != "" {
+			if _, err := fmt.Sscanf(ctaTimeRaw, "%d", &ctaTimeSeconds); err != nil || ctaTimeSeconds < 0 {
+				ctaTimeSeconds = 0
+			}
+		}
+
+		_, err := db.Exec(`
+			INSERT INTO leads (
+				video_id,
+				email,
+				name,
+				cta_id,
+				cta_type,
+				cta_time_seconds,
+				cta_hero_text
+			) VALUES (?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(video_id, email) DO UPDATE SET
+				name = CASE
+					WHEN excluded.name != '' THEN excluded.name
+					ELSE leads.name
+				END,
+				cta_id = excluded.cta_id,
+				cta_type = excluded.cta_type,
+				cta_time_seconds = excluded.cta_time_seconds,
+				cta_hero_text = excluded.cta_hero_text
+		`, id, email, name, ctaID, ctaType, ctaTimeSeconds, ctaHeroText)
 		if err != nil {
 			log.Printf("Lead capture error for %s: %v", id, err)
 			http.Error(w, "failed to capture lead", http.StatusInternalServerError)

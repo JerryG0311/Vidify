@@ -522,6 +522,28 @@ let currentTab = 'link';
             return form._leadUI;
         }
 
+        function getLeadCTAContext(stage, form, stageVideo) {
+            const isEmailGateForm = form?.dataset?.ctaType === 'email_gate';
+
+            if (isEmailGateForm) {
+                const currentSecond = Math.floor(stageVideo ? stageVideo.currentTime || 0 : 0);
+                const activeCTA = getActiveCTA(currentSecond, stage);
+                if (activeCTA && (activeCTA.ctaType || '') === 'email_gate') {
+                    return activeCTA;
+                }
+
+                return {
+                    id: '',
+                    ctaType: 'email_gate',
+                    timeSeconds: 0,
+                    heroText: 'Ready to take the next step?'
+                };
+            }
+
+            const currentSecond = Math.floor(stageVideo ? stageVideo.currentTime || 0 : 0);
+            return getActiveCTA(currentSecond, stage);
+        }
+
         function handleTimedLeadSuccess(stage, form, stageVideo) {
             if (!stage || !form) return;
 
@@ -813,6 +835,7 @@ let currentTab = 'link';
                 const stageVideo = stage ? stage.querySelector('video') : null;
                 const isEmailGateForm = form.dataset.ctaType === 'email_gate';
                 const gateForm = stage ? stage.querySelector('.video-gate-form') : null;
+                const leadCTAContext = getLeadCTAContext(stage, form, stageVideo);
                 if (!videoId || !emailInput || !emailInput.value.trim()) return;
                 if (isEmailGateForm && (!nameInput || !nameInput.value.trim())) return;
 
@@ -820,6 +843,18 @@ let currentTab = 'link';
                     email: emailInput.value.trim(),
                     name: nameInput ? nameInput.value.trim() : ''
                 });
+
+                if (leadCTAContext) {
+                    body.append('cta_id', leadCTAContext.id || '');
+                    body.append('cta_type', leadCTAContext.ctaType || form.dataset.ctaType || '');
+                    body.append('cta_time_seconds', String(leadCTAContext.timeSeconds || 0));
+                    body.append('cta_hero_text', leadCTAContext.heroText || '');
+                } else {
+                    body.append('cta_id', '');
+                    body.append('cta_type', form.dataset.ctaType || '');
+                    body.append('cta_time_seconds', '0');
+                    body.append('cta_hero_text', '');
+                }
                 try {
                     const response = await fetch(`/capture-lead/${videoId}`, {
                         method: 'POST',
