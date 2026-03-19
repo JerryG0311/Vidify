@@ -107,14 +107,38 @@ type ViewPageData struct {
 }
 
 type LeadData struct {
-	Name      string
-	Email     string
-	CreatedAt time.Time
+	Name           string
+	Email          string
+	CTAID          string
+	CTAType        string
+	CTATimeSeconds int
+	CTAHeroText    string
+	CreatedAt      time.Time
+}
+
+type CTAPerformanceData struct {
+	CTAID           string
+	Text            string
+	HeroText        string
+	CTAType         string
+	TimeSeconds     int
+	LeadCount       int
+	UniqueLeadCount int
 }
 
 type RetentionPoint struct {
 	Second int `json:"second"`
 	Views  int `json:"views"`
+}
+
+type DropoffBucketData struct {
+	Label        string
+	StartSecond  int
+	EndSecond    int
+	StartViews   int
+	EndViews     int
+	DropoffCount int
+	DropoffRate  float64
 }
 
 type StatsPageData struct {
@@ -125,7 +149,9 @@ type StatsPageData struct {
 	CTR              float64
 	LeadCount        int
 	Leads            []LeadData
+	CTAPerformance   []CTAPerformanceData
 	RetentionJSON    template.JS
+	DropoffHeatmap   []DropoffBucketData
 	RetentionPeak    int
 	RetentionMaxTime int
 }
@@ -419,6 +445,73 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		log.Printf("Failed to write JSON response: %v", err)
 	}
+}
+
+func retentionViewsAtOrAfter(points []RetentionPoint, target int) int {
+	for _, point := range points {
+		if point.Second >= target {
+			return point.Views
+		}
+	}
+	if len(points) > 0 {
+		return points[len(points)-1].Views
+	}
+	return 0
+}
+
+func retentionViewsAtOrBefore(points []RetentionPoint, target int) int {
+	lastViews := 0
+	for _, point := range points {
+		if point.Second > target {
+			break
+		}
+		lastViews = point.Views
+	}
+	if lastViews == 0 && len(points) > 0 {
+		return points[0].Views
+	}
+	return lastViews
+}
+
+func buildDropoffHeatmap(points []RetentionPoint) []DropoffBucketData {
+	if len(points) == 0 {
+		return nil
+	}
+
+	maxSecond := points[len(points)-1].Second
+	bucketSize := 10
+	var heatmap []DropoffBucketData
+
+	for start := 0; start <= maxSecond; start += bucketSize {
+		end := start + bucketSize - 1
+		if end > maxSecond {
+			end = maxSecond
+		}
+
+		startViews := retentionViewsAtOrAfter(points, start)
+		endViews := retentionViewsAtOrBefore(points, end)
+		if endViews > startViews {
+			endViews = startViews
+		}
+
+		dropoffCount := startViews - endViews
+		dropoffRate := 0.0
+		if startViews > 0 {
+			dropoffRate = (float64(dropoffCount) / float64(startViews)) * 100
+		}
+
+		heatmap = append(heatmap, DropoffBucketData{
+			Label:        fmt.Sprintf("%ds–%ds", start, end),
+			StartSecond:  start,
+			EndSecond:    end,
+			StartViews:   startViews,
+			EndViews:     endViews,
+			DropoffCount: dropoffCount,
+			DropoffRate:  dropoffRate,
+		})
+	}
+
+	return heatmap
 }
 
 func sendWebHook(webhookURL string, payload webhookPayload) {
@@ -1784,6 +1877,7 @@ func main() {
 			created_at, 
 			status, 
 			IFNULL(cta_text, ''), 
+			IFNULL(cta_hero_text, ''),
 			IFNULL(cta_url, ''), 
 			IFNULL(cta_time_seconds, 0), 
 			IFNULL(cta_type, 'button'),
@@ -1804,6 +1898,7 @@ func main() {
 			&v.CreatedAt,
 			&v.Status,
 			&v.CTAText,
+			&v.CTAHeroText,
 			&v.CTAURL,
 			&v.CTATimeSeconds,
 			&v.CTAType,
@@ -1835,7 +1930,7 @@ func main() {
 			ctr = (float64(v.CTAClicks) / float64(v.Views)) * 100
 		}
 
-		leadRows, err := db.Query("SELECT IFNULL(name, ''), email, created_at FROM leads WHERE video_id = ? ORDER BY created_at DESC", id)
+		leadRows, err := db.Query("SELECT IFNULL(name, ''), email, IFNULL(cta_id, ''), IFNULL(cta_type, ''), IFNULL(cta_time_seconds, 0), IFNULL(cta_hero_text, ''), created_at FROM leads WHERE video_id = ? ORDER BY created_at DESC", id)
 		if err != nil {
 			log.Printf("Lead query error for %s: %v", id, err)
 			http.Error(w, "unable to load video leads", http.StatusInternalServerError)
@@ -1846,11 +1941,76 @@ func main() {
 		var leads []LeadData
 		for leadRows.Next() {
 			var lead LeadData
-			if err := leadRows.Scan(&lead.Name, &lead.Email, &lead.CreatedAt); err != nil {
+			if err := leadRows.Scan(&lead.Name, &lead.Email, &lead.CTAID, &lead.CTAType, &lead.CTATimeSeconds, &lead.CTAHeroText, &lead.CreatedAt); err != nil {
 				log.Printf("Lead scan error for %s: %v", id, err)
 				continue
 			}
 			leads = append(leads, lead)
+		}
+
+		var ctaPerformance []CTAPerformanceData
+
+		ctaRows, err := db.Query(`
+			SELECT
+				vc.id,
+				vc.cta_text,
+				IFNULL(vc.cta_hero_text, ''),
+				IFNULL(vc.cta_type, 'button'),
+				IFNULL(vc.cta_time_seconds, 0),
+				COUNT(l.id) AS lead_count,
+				COUNT(DISTINCT l.email) AS unique_lead_count
+			FROM video_ctas vc
+			LEFT JOIN leads l ON l.video_id = vc.video_id AND l.cta_id = vc.id
+			WHERE vc.video_id = ?
+			GROUP BY vc.id, vc.cta_text, vc.cta_hero_text, vc.cta_type, vc.cta_time_seconds
+			ORDER BY vc.cta_time_seconds ASC, vc.created_at ASC
+		`, id)
+		if err != nil {
+			log.Printf("CTA performance query error for %s: %v", id, err)
+			http.Error(w, "unable to load cta analytics", http.StatusInternalServerError)
+			return
+		}
+		defer ctaRows.Close()
+
+		for ctaRows.Next() {
+			var item CTAPerformanceData
+			if err := ctaRows.Scan(
+				&item.CTAID,
+				&item.Text,
+				&item.HeroText,
+				&item.CTAType,
+				&item.TimeSeconds,
+				&item.LeadCount,
+				&item.UniqueLeadCount,
+			); err != nil {
+				log.Printf("CTA performance scan error for %s: %v", id, err)
+				continue
+			}
+			ctaPerformance = append(ctaPerformance, item)
+		}
+		legacyLeadCount := 0
+		legacyUniqueLeadCount := 0
+		err = db.QueryRow(`
+			SELECT COUNT(id), COUNT(DISTINCT email)
+			FROM leads
+			WHERE video_id = ? AND (cta_id = '' OR cta_id IS NULL)
+		`, id).Scan(&legacyLeadCount, &legacyUniqueLeadCount)
+		if err != nil {
+			log.Printf("Legacy CTA performance query error for %s: %v", id, err)
+			http.Error(w, "unable to load cta analytics", http.StatusInternalServerError)
+			return
+		}
+
+		if strings.TrimSpace(v.CTAText) != "" || strings.TrimSpace(v.CTAHeroText) != "" || strings.TrimSpace(v.CTAType) != "button" || legacyLeadCount > 0 {
+			ctaPerformance = append([]CTAPerformanceData{{
+				CTAID:           "",
+				Text:            v.CTAText,
+				HeroText:        v.CTAHeroText,
+				CTAType:         v.CTAType,
+				TimeSeconds:     v.CTATimeSeconds,
+				LeadCount:       legacyLeadCount,
+				UniqueLeadCount: legacyUniqueLeadCount,
+			}}, ctaPerformance...)
 		}
 
 		retentionRows, err := db.Query("SELECT second, views FROM video_retention WHERE video_id = ? ORDER BY second ASC", id)
@@ -1884,6 +2044,7 @@ func main() {
 			log.Printf("Retention JSON marshal error for %s: %v", id, err)
 			retentionJSONBytes = []byte("[]")
 		}
+		dropoffHeatmap := buildDropoffHeatmap(retentionPoints)
 
 		if isExport {
 			filename := fmt.Sprintf("vidify-leads-%s.csv", id)
@@ -1893,7 +2054,7 @@ func main() {
 			csvWriter := csv.NewWriter(w)
 			defer csvWriter.Flush()
 
-			if err := csvWriter.Write([]string{"Name", "Email", "Captured At"}); err != nil {
+			if err := csvWriter.Write([]string{"Name", "Email", "CTA ID", "CTA Type", "CTA Time (s)", "CTA Hero Text", "Captured At"}); err != nil {
 				log.Printf("CSV header write error for %s: %v", id, err)
 				http.Error(w, "Unable to export leads", http.StatusInternalServerError)
 				return
@@ -1903,6 +2064,10 @@ func main() {
 				if err := csvWriter.Write([]string{
 					lead.Name,
 					lead.Email,
+					lead.CTAID,
+					lead.CTAType,
+					fmt.Sprintf("%d", lead.CTATimeSeconds),
+					lead.CTAHeroText,
 					lead.CreatedAt.Format("2006-01-02 15:04:05"),
 				}); err != nil {
 					log.Printf("CSV row write error for %s: %v", id, err)
@@ -1928,7 +2093,9 @@ func main() {
 			CTR:              ctr,
 			LeadCount:        len(leads),
 			Leads:            leads,
+			CTAPerformance:   ctaPerformance,
 			RetentionJSON:    template.JS(retentionJSONBytes),
+			DropoffHeatmap:   dropoffHeatmap,
 			RetentionPeak:    retentionPeak,
 			RetentionMaxTime: retentionMaxTime,
 		}

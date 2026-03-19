@@ -232,6 +232,54 @@
             background: #0095cc;
         }
 
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #ffffff;
+        }
+
+        .stats-table thead tr {
+            border-bottom: 1px solid #2a2a2a;
+            text-align: left;
+        }
+
+        .stats-table th {
+            padding: 12px 10px;
+            white-space: nowrap;
+        }
+
+        .stats-table tbody tr {
+            border-bottom: 1px solid #242424;
+        }
+
+        .stats-table td {
+            padding: 12px 10px;
+            vertical-align: top;
+        }
+
+        .cta-type-pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #101010;
+            border: 1px solid #2a2a2a;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+
+        .muted-inline {
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
         .leads-header {
             display: flex;
             justify-content: space-between;
@@ -348,6 +396,179 @@
             background: #121212;
             text-align: center;
             padding: 20px;
+        }
+
+        .heatmap-card {
+            margin-top: 16px;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            color: #9ca3af;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+
+        .heatmap-legend-bar {
+            width: 140px;
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #132033 0%, #0ea5e9 35%, #f59e0b 70%, #ef4444 100%);
+            border: 1px solid #2a2a2a;
+        }
+
+        .heatmap-strip-wrap {
+            margin-top: 18px;
+            padding: 16px;
+            border: 1px solid #242424;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            overflow-x: auto;
+        }
+
+        .heatmap-strip {
+            display: flex;
+            gap: 10px;
+            width: max-content;
+            min-width: 100%;
+            align-items: stretch;
+            min-height: 86px;
+        }
+
+        .heatmap-segment {
+            width: 128px;
+            min-width: 128px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+            background: #121212;
+            box-sizing: border-box;
+        }
+
+        .heatmap-segment.cool {
+            background: linear-gradient(180deg, rgba(19, 32, 51, 0.95), rgba(14, 165, 233, 0.10));
+        }
+
+        .heatmap-segment.warm {
+            background: linear-gradient(180deg, rgba(52, 33, 12, 0.95), rgba(245, 158, 11, 0.14));
+        }
+
+        .heatmap-segment.hot {
+            background: linear-gradient(180deg, rgba(63, 18, 18, 0.96), rgba(239, 68, 68, 0.18));
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .heatmap-segment.is-empty {
+            opacity: 0.52;
+        }
+
+        .heatmap-segment-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f3f4f6;
+            white-space: nowrap;
+        }
+
+        .heatmap-segment-value {
+            font-size: 34px;
+            line-height: 1;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .heatmap-segment-meta {
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.45;
+        }
+
+        .heatmap-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .heatmap-row {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr) 88px 92px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .heatmap-row-label {
+            color: #f3f4f6;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .heatmap-bar {
+            position: relative;
+            height: 12px;
+            border-radius: 999px;
+            background: #101010;
+            border: 1px solid #242424;
+            overflow: hidden;
+        }
+
+        .heatmap-bar-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+            border-radius: 999px;
+        }
+
+        .heatmap-row.cool .heatmap-bar-fill {
+            background: linear-gradient(90deg, #1d4ed8 0%, #0ea5e9 100%);
+        }
+
+        .heatmap-row.warm .heatmap-bar-fill {
+            background: linear-gradient(90deg, #f59e0b 0%, #f97316 100%);
+        }
+
+        .heatmap-row.hot .heatmap-bar-fill {
+            background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+        }
+
+        .heatmap-row-rate {
+            color: #f3f4f6;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .heatmap-row-meta {
+            color: #9ca3af;
+            font-size: 12px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 820px) {
+            .heatmap-row {
+                grid-template-columns: 78px minmax(0, 1fr) 72px;
+            }
+
+            .heatmap-row-meta {
+                display: none;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .heatmap-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .heatmap-row-rate,
+            .heatmap-row-meta {
+                text-align: left;
+            }
         }
 
         @media (max-width: 980px) {
@@ -498,26 +719,101 @@
 
         <div class="details-card" style="margin-top:16px;">
             <div class="leads-header">
+                <h2 class="section-title" style="margin:0;">CTA Performance</h2>
+            </div>
+
+            {{if .CTAPerformance}}
+            <div class="table-wrap">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Hero / CTA</th>
+                            <th>Type</th>
+                            <th>Appears</th>
+                            <th>Total Leads</th>
+                            <th>Unique Leads</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .CTAPerformance}}
+                        <tr>
+                            <td>
+                                <div style="color:#f3f4f6; font-weight:600;">{{if .HeroText}}{{.HeroText}}{{else if .Text}}{{.Text}}{{else}}Untitled CTA{{end}}</div>
+                                {{if and .HeroText .Text}}
+                                <div class="muted-inline" style="margin-top:4px;">Button/Text: {{.Text}}</div>
+                                {{end}}
+                            </td>
+                            <td><span class="cta-type-pill">{{if .CTAType}}{{.CTAType}}{{else}}button{{end}}</span></td>
+                            <td class="muted-inline">
+                                {{if eq .CTAType "email_gate"}}
+                                    Before video starts
+                                {{else if gt .TimeSeconds 0}}
+                                    {{.TimeSeconds}}s
+                                {{else}}
+                                    0s
+                                {{end}}
+                            </td>
+                            <td style="color:#f3f4f6; font-weight:600;">{{.LeadCount}}</td>
+                            <td class="muted-inline">{{.UniqueLeadCount}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="empty-state">No CTA performance data yet for this video.</div>
+            {{end}}
+        </div>
+
+        <div class="details-card" style="margin-top:16px;">
+            <div class="leads-header">
                 <h2 class="section-title" style="margin:0;">Captured Leads</h2>
                 <a class="export-btn" href="/stats/{{.Video.ID}}/export">Export CSV</a>
             </div>
 
             {{if .Leads}}
-            <div style="overflow-x:auto;">
-                <table style="width:100%; border-collapse:collapse; color:#ffffff;">
+            <div class="table-wrap">
+                <table class="stats-table">
                     <thead>
-                        <tr style="border-bottom:1px solid #2a2a2a; text-align:left;">
-                            <th style="padding:12px 10px;">Name</th>
-                            <th style="padding:12px 10px;">Email</th>
-                            <th style="padding:12px 10px;">Captured</th>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>CTA Source</th>
+                            <th>Type</th>
+                            <th>Time</th>
+                            <th>Captured</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{range .Leads}}
-                        <tr style="border-bottom:1px solid #242424;">
-                            <td style="padding:12px 10px; color:#f3f4f6;">{{if .Name}}{{.Name}}{{else}}—{{end}}</td>
-                            <td style="padding:12px 10px; color:#cbd5e1;">{{.Email}}</td>
-                            <td style="padding:12px 10px; color:#9ca3af;">{{.CreatedAt.Format "Jan 02, 2006 3:04 PM"}}</td>
+                        <tr>
+                            <td style="color:#f3f4f6;">{{if .Name}}{{.Name}}{{else}}—{{end}}</td>
+                            <td style="color:#cbd5e1;">{{.Email}}</td>
+                            <td>
+                                <div style="color:#f3f4f6;">{{if .CTAHeroText}}{{.CTAHeroText}}{{else}}<span class="empty-state">Legacy / Unknown CTA</span>{{end}}</div>
+                                {{if .CTAID}}
+                                <div class="muted-inline" style="margin-top:4px;">ID: {{.CTAID}}</div>
+                                {{end}}
+                            </td>
+                            <td>
+                                {{if .CTAType}}
+                                <span class="cta-type-pill">{{.CTAType}}</span>
+                                {{else}}
+                                <span class="empty-state">—</span>
+                                {{end}}
+                            </td>
+                            <td class="muted-inline">
+                                {{if eq .CTAType "email_gate"}}
+                                    Before video starts
+                                {{else if gt .CTATimeSeconds 0}}
+                                    {{.CTATimeSeconds}}s
+                                {{else if .CTAType}}
+                                    0s
+                                {{else}}
+                                    —
+                                {{end}}
+                            </td>
+                            <td style="color:#9ca3af;">{{.CreatedAt.Format "Jan 02, 2006 3:04 PM"}}</td>
                         </tr>
                         {{end}}
                     </tbody>
@@ -555,6 +851,57 @@
             </div>
             {{else}}
             <div class="chart-empty">Watch data will appear here once people start viewing this video.</div>
+            {{end}}
+        </div>
+
+        <div class="details-card heatmap-card">
+            <div class="retention-header">
+                <div>
+                    <h2 class="section-title" style="margin-bottom:8px;">Viewer Drop-Off Heatmap</h2>
+                    <div class="retention-subtitle">See which 10-second windows lose the most viewers so you can tighten weak sections and place CTAs before major drop-off points.</div>
+                </div>
+            </div>
+
+            {{if .DropoffHeatmap}}
+            <div class="heatmap-legend">
+                <span>Cooler</span>
+                <div class="heatmap-legend-bar"></div>
+                <span>Hotter drop-off zones</span>
+            </div>
+
+            <div class="heatmap-strip-wrap">
+                <div class="heatmap-strip">
+                    {{range .DropoffHeatmap}}
+                    {{if gt .DropoffCount 0}}
+                    <div class="heatmap-segment {{if ge .DropoffRate 50.0}}hot{{else if ge .DropoffRate 20.0}}warm{{else}}cool{{end}}">
+                        <div class="heatmap-segment-label">{{.Label}}</div>
+                        <div class="heatmap-segment-value">{{.DropoffCount}}</div>
+                        <div class="heatmap-segment-meta">
+                            {{printf "%.1f" .DropoffRate}}% drop-off<br>
+                            {{.StartViews}} → {{.EndViews}} viewers
+                        </div>
+                    </div>
+                    {{end}}
+                    {{end}}
+                </div>
+            </div>
+
+            <div class="heatmap-list">
+                {{range .DropoffHeatmap}}
+                {{if gt .DropoffCount 0}}
+                <div class="heatmap-row {{if ge .DropoffRate 50.0}}hot{{else if ge .DropoffRate 20.0}}warm{{else}}cool{{end}}">
+                    <div class="heatmap-row-label">{{.Label}}</div>
+                    <div class="heatmap-bar">
+                        <div class="heatmap-bar-fill" data-rate="{{printf "%.1f" .DropoffRate}}"></div>
+                    </div>
+                    <div class="heatmap-row-rate">{{printf "%.1f" .DropoffRate}}%</div>
+                    <div class="heatmap-row-meta">{{.DropoffCount}} lost</div>
+                </div>
+                {{end}}
+                {{end}}
+            </div>
+            {{else}}
+            <div class="empty-state">Drop-off heatmap data will appear once enough retention data has been recorded.</div>
             {{end}}
         </div>
     </div>
@@ -672,6 +1019,12 @@
                 ${xLabels}
             `;
         })();
+
+        document.querySelectorAll('.heatmap-bar-fill[data-rate]').forEach((el) => {
+            const raw = parseFloat(el.dataset.rate || '0');
+            const safe = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
+            el.style.width = `${safe}%`;
+        });
     </script>
 </body>
 </html>
