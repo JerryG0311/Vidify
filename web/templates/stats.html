@@ -730,8 +730,10 @@
                             <th>Hero / CTA</th>
                             <th>Type</th>
                             <th>Appears</th>
+                            <th>Impressions</th>
                             <th>Total Leads</th>
                             <th>Unique Leads</th>
+                            <th>CVR</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -753,8 +755,16 @@
                                     0s
                                 {{end}}
                             </td>
+                            <td class="muted-inline">{{.ImpressionCount}}</td>
                             <td style="color:#f3f4f6; font-weight:600;">{{.LeadCount}}</td>
                             <td class="muted-inline">{{.UniqueLeadCount}}</td>
+                            <td style="color:#f3f4f6; font-weight:600;">
+                                {{if gt .ImpressionCount 0}}
+                                    {{printf "%.1f" .ConversionRate}}%
+                                {{else}}
+                                    —
+                                {{end}}
+                            </td>
                         </tr>
                         {{end}}
                     </tbody>

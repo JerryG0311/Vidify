@@ -85,6 +85,11 @@ let currentTab = 'link';
             return cleaned;
         }
 
+        function normalizeCTAId(value) {
+            if (typeof value !== 'string') return '';
+            return value.replace(/^"+|"+$/g, '').trim();
+        }
+
         function getDismissedCTAIds(stage) {
             const raw = stage?.dataset?.dismissedCtaIds || '';
             return new Set(raw.split(',').map((id) => id.trim()).filter(Boolean));
@@ -95,6 +100,50 @@ let currentTab = 'link';
             const dismissed = getDismissedCTAIds(stage);
             dismissed.add(ctaId);
             stage.dataset.dismissedCtaIds = Array.from(dismissed).join(',');
+        }
+
+        function getTrackedCTAImpressionIds(stage) {
+            const raw = stage?.dataset?.trackedCtaImpressionIds || '';
+            return new Set(raw.split(',').map((id) => id.trim()).filter(Boolean));
+        }
+
+        function setTrackedCTAImpressionId(stage, ctaId) {
+            if (!stage || !ctaId) return;
+            const tracked = getTrackedCTAImpressionIds(stage);
+            tracked.add(ctaId);
+            stage.dataset.trackedCtaImpressionIds = Array.from(tracked).join(',');
+        }
+
+        function trackCTAImpression(stage, cta) {
+            if (!stage || !cta) return;
+
+            const ctaId = normalizeCTAId(cta.id || '');
+            const tracked = getTrackedCTAImpressionIds(stage);
+            if (ctaId && tracked.has(ctaId)) return;
+
+            const payload = JSON.stringify({
+                videoId: currentVideoId,
+                ctaId: ctaId,
+                ctaType: cta.ctaType || 'button',
+                ctaTimeSeconds: Number(cta.timeSeconds || 0),
+                ctaHeroText: cta.heroText || '',
+                ctaText: cta.text || ''
+            });
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(`/cta-impression/${currentVideoId}`, new Blob([payload], { type: 'application/json' }));
+            } else {
+                fetch(`/cta-impression/${currentVideoId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload,
+                    keepalive: true
+                }).catch(() => {});
+            }
+
+            if (ctaId) {
+                setTrackedCTAImpressionId(stage, ctaId);
+            }
         }
 
         function resetStageCTAUI(stage, ui = null) {
@@ -198,6 +247,7 @@ let currentTab = 'link';
                 gateSubmit.textContent = 'Get Access';
             }
 
+            trackCTAImpression(stage, activeCTA);
             stage.classList.add('show-cta');
             stage.classList.add('hide-cta-play-badge');
 
@@ -278,6 +328,7 @@ let currentTab = 'link';
                 ctaSubmit.textContent = cleanText || 'Get Access';
             }
 
+            trackCTAImpression(stage, activeCTA);
             stage.classList.add('show-cta');
             stage.classList.add('hide-cta-play-badge');
             stage.classList.remove('is-gated');
@@ -347,6 +398,7 @@ let currentTab = 'link';
                 }
             }
 
+            trackCTAImpression(stage, activeCTA);
             stage.classList.add('show-cta');
             stage.classList.add('hide-cta-play-badge');
             stage.classList.remove('is-gated');
@@ -370,6 +422,13 @@ let currentTab = 'link';
                 return;
             }
 
+            trackCTAImpression(stage, {
+                id: '',
+                ctaType: 'email_gate',
+                timeSeconds: 0,
+                heroText: 'Ready to take the next step?',
+                text: 'Get Access'
+            });
             stage.classList.add('show-cta');
             stage.classList.add('hide-cta-play-badge');
             stage.classList.add('is-gated');
@@ -436,6 +495,13 @@ let currentTab = 'link';
                     legacyCTAButton.rel = 'noopener noreferrer';
                 }
 
+                trackCTAImpression(stage, {
+                    id: '',
+                    ctaType: stage.dataset.ctaType || 'button',
+                    timeSeconds: ctaSeconds,
+                    heroText: stage.dataset.ctaHeroText || '',
+                    text: legacyCTAButton ? (legacyCTAButton.textContent || '').trim() : ''
+                });
                 stage.classList.add('show-cta');
                 stage.classList.add('hide-cta-play-badge');
             } else {
@@ -845,7 +911,7 @@ let currentTab = 'link';
                 });
 
                 if (leadCTAContext) {
-                    body.append('cta_id', leadCTAContext.id || '');
+                    body.append('cta_id', normalizeCTAId(leadCTAContext.id || ''));
                     body.append('cta_type', leadCTAContext.ctaType || form.dataset.ctaType || '');
                     body.append('cta_time_seconds', String(leadCTAContext.timeSeconds || 0));
                     body.append('cta_hero_text', leadCTAContext.heroText || '');

@@ -122,8 +122,10 @@ type CTAPerformanceData struct {
 	HeroText        string
 	CTAType         string
 	TimeSeconds     int
+	ImpressionCount int
 	LeadCount       int
 	UniqueLeadCount int
+	ConversionRate  float64
 }
 
 type RetentionPoint struct {
@@ -1739,6 +1741,65 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	http.HandleFunc("/cta-impression/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		videoID := filepath.Base(r.URL.Path)
+		if videoID == "" {
+			http.Error(w, "missing video id", http.StatusBadRequest)
+			return
+		}
+
+		var payload struct {
+			VideoID        string `json:"videoId"`
+			CTAID          string `json:"ctaId"`
+			CTAType        string `json:"ctaType"`
+			CTATimeSeconds int    `json:"ctaTimeSeconds"`
+			CTAHeroText    string `json:"ctaHeroText"`
+			CTAText        string `json:"ctaText"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "invalid json body", http.StatusBadRequest)
+			return
+		}
+
+		ctaID := strings.TrimSpace(payload.CTAID)
+		if ctaID == "" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		result, err := db.Exec(`
+			UPDATE video_ctas
+			SET impression_count = IFNULL(impression_count, 0) + 1
+			WHERE id = ? AND video_id = ?
+		`, ctaID, videoID)
+		if err != nil {
+			log.Printf("CTA impression update error for video %s cta %s: %v", videoID, ctaID, err)
+			http.Error(w, "failed to track cta impression", http.StatusInternalServerError)
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			log.Printf("CTA impression rows affected error for video %s cta %s: %v", videoID, ctaID, err)
+			http.Error(w, "failed to track cta impression", http.StatusInternalServerError)
+			return
+		}
+
+		if rowsAffected == 0 {
+			log.Printf("CTA impression skipped: no matching CTA for video %s cta %s", videoID, ctaID)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	http.HandleFunc("/cta-click/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -1957,12 +2018,13 @@ func main() {
 				IFNULL(vc.cta_hero_text, ''),
 				IFNULL(vc.cta_type, 'button'),
 				IFNULL(vc.cta_time_seconds, 0),
+				IFNULL(vc.impression_count, 0),
 				COUNT(l.id) AS lead_count,
 				COUNT(DISTINCT l.email) AS unique_lead_count
 			FROM video_ctas vc
 			LEFT JOIN leads l ON l.video_id = vc.video_id AND l.cta_id = vc.id
 			WHERE vc.video_id = ?
-			GROUP BY vc.id, vc.cta_text, vc.cta_hero_text, vc.cta_type, vc.cta_time_seconds
+			GROUP BY vc.id, vc.cta_text, vc.cta_hero_text, vc.cta_type, vc.cta_time_seconds, vc.impression_count
 			ORDER BY vc.cta_time_seconds ASC, vc.created_at ASC
 		`, id)
 		if err != nil {
@@ -1980,11 +2042,15 @@ func main() {
 				&item.HeroText,
 				&item.CTAType,
 				&item.TimeSeconds,
+				&item.ImpressionCount,
 				&item.LeadCount,
 				&item.UniqueLeadCount,
 			); err != nil {
 				log.Printf("CTA performance scan error for %s: %v", id, err)
 				continue
+			}
+			if item.ImpressionCount > 0 {
+				item.ConversionRate = (float64(item.LeadCount) / float64(item.ImpressionCount)) * 100
 			}
 			ctaPerformance = append(ctaPerformance, item)
 		}
@@ -2008,8 +2074,10 @@ func main() {
 				HeroText:        v.CTAHeroText,
 				CTAType:         v.CTAType,
 				TimeSeconds:     v.CTATimeSeconds,
+				ImpressionCount: 0,
 				LeadCount:       legacyLeadCount,
 				UniqueLeadCount: legacyUniqueLeadCount,
+				ConversionRate:  0,
 			}}, ctaPerformance...)
 		}
 
