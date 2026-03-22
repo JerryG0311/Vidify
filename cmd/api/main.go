@@ -121,9 +121,10 @@ type FunnelListPageData struct {
 }
 
 type FunnelBuilderPageData struct {
-	Funnel    FunnelData
-	Steps     []FunnelStepData
-	UserEmail string
+	Funnel       FunnelData
+	Steps        []FunnelStepData
+	SelectedStep *FunnelStepData
+	UserEmail    string
 }
 
 type ViewPageData struct {
@@ -1306,6 +1307,64 @@ func main() {
 		http.Redirect(w, r, "/funnels/"+funnelID+"/builder", http.StatusSeeOther)
 	})
 
+	http.HandleFunc("/funnels/step/update", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		stepID := strings.TrimSpace(r.FormValue("step_id"))
+		funnelID := strings.TrimSpace(r.FormValue("funnel_id"))
+		headline := strings.TrimSpace(r.FormValue("headline"))
+		subheadline := strings.TrimSpace(r.FormValue("subheadline"))
+
+		if stepID == "" || funnelID == "" {
+			http.Error(w, "missing step or funnel id", http.StatusBadRequest)
+			return
+		}
+
+		var ownerEmail string
+		err := db.QueryRow(`
+			SELECT f.user_id
+			FROM funnel_steps fs
+			JOIN funnels f ON f.id = fs.funnel_id
+			WHERE fs.id = ? AND fs.funnel_id = ?
+		`, stepID, funnelID).Scan(&ownerEmail)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.NotFound(w, r)
+				return
+			}
+			log.Printf("Step update lookup error for %s: %v", stepID, err)
+			http.Error(w, "unable to load funnel step", http.StatusInternalServerError)
+			return
+		}
+
+		if ownerEmail != userEmail {
+			http.NotFound(w, r)
+			return
+		}
+
+		_, err = db.Exec(`
+			UPDATE funnel_steps
+			SET headline = ?, subheadline = ?
+			WHERE id = ? AND funnel_id = ?
+		`, headline, subheadline, stepID, funnelID)
+		if err != nil {
+			log.Printf("Step update error for %s: %v", stepID, err)
+			http.Error(w, "unable to update step", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/funnels/"+funnelID+"/builder?step="+stepID, http.StatusSeeOther)
+	})
+
 	http.HandleFunc("/funnels/", func(w http.ResponseWriter, r *http.Request) {
 		userEmail := getLoggedInUser(r)
 		if userEmail == "" {
@@ -1331,6 +1390,8 @@ func main() {
 			http.Redirect(w, r, "/funnels", http.StatusSeeOther)
 			return
 		}
+
+		selectedStepID := strings.TrimSpace(r.URL.Query().Get("step"))
 
 		var funnel FunnelData
 		err := db.QueryRow(`
@@ -1393,6 +1454,17 @@ func main() {
 			steps = append(steps, step)
 		}
 
+		var selectedStep *FunnelStepData
+		if selectedStepID != "" {
+			for i := range steps {
+				if steps[i].ID == selectedStepID {
+					stepCopy := steps[i]
+					selectedStep = &stepCopy
+					break
+				}
+			}
+		}
+
 		tmpl, err := template.ParseFiles("web/templates/funnel_builder.html")
 		if err != nil {
 			log.Printf("Funnel builder template error: %v", err)
@@ -1401,9 +1473,10 @@ func main() {
 		}
 
 		data := FunnelBuilderPageData{
-			Funnel:    funnel,
-			Steps:     steps,
-			UserEmail: userEmail,
+			Funnel:       funnel,
+			Steps:        steps,
+			SelectedStep: selectedStep,
+			UserEmail:    userEmail,
 		}
 
 		if err := tmpl.Execute(w, data); err != nil {

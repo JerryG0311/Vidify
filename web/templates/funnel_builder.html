@@ -319,7 +319,11 @@
             flex-wrap: wrap;
         }
 
-        .step-btn {
+       .step-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
             padding: 10px 12px;
             border-radius: 12px;
             background: #171717;
@@ -327,6 +331,7 @@
             color: #f9fafb;
             font-size: 13px;
             font-weight: 700;
+            cursor: pointer;
         }
 
         .step-connector {
@@ -544,7 +549,7 @@
                             </div>
 
                             <div class="step-actions">
-                                <button class="step-btn" type="button">Edit Step</button>
+                                <a class="step-btn" href="/funnels/{{$.Funnel.ID}}/builder?step={{.ID}}">Edit Step</a>
                                 <button class="step-btn" type="button">Duplicate</button>
                                 <button class="step-btn" type="button">Delete</button>
                             </div>
@@ -585,6 +590,45 @@
             </div>
 
             <div class="panel">
+                {{if .SelectedStep}}
+                <div class="panel-header">
+                    <h2 class="panel-title">Step Settings</h2>
+                    <p class="panel-subtitle">
+                        Edit the selected step directly from the right rail without leaving the builder.
+                    </p>
+                </div>
+
+                <div class="side-info">
+                    <div class="info-group">
+                        <div class="info-label">Editing Step</div>
+                        <div class="info-value">{{.SelectedStep.ID}}</div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Step Type</div>
+                        <div class="info-value">{{.SelectedStep.StepType}}</div>
+                    </div>
+
+                    <form method="POST" action="/funnels/step/update" style="display:grid; gap:16px;">
+                        <input type="hidden" name="funnel_id" value="{{.Funnel.ID}}">
+                        <input type="hidden" name="step_id" value="{{.SelectedStep.ID}}">
+
+                        <div class="info-group">
+                            <label class="info-label" for="headline">Headline</label>
+                            <input id="headline" name="headline" type="text" value="{{.SelectedStep.Headline}}" style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a2a2a; background:#151515; color:#f9fafb; font-size:14px;">
+                        </div>
+
+                        <div class="info-group">
+                            <label class="info-label" for="subheadline">Subheadline</label>
+                            <textarea id="subheadline" name="subheadline" rows="4" style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a2a2a; background:#151515; color:#f9fafb; font-size:14px; resize:vertical;">{{.SelectedStep.Subheadline}}</textarea>
+                        </div>
+
+                        <button class="btn btn-primary" type="submit">Save Step</button>
+                    </form>
+
+                    <a class="btn btn-secondary" href="/funnels/{{.Funnel.ID}}/builder">Done Editing</a>
+                </div>
+                {{else}}
                 <div class="panel-header">
                     <h2 class="panel-title">Funnel Details</h2>
                     <p class="panel-subtitle">
@@ -614,10 +658,12 @@
                     </div>
 
                     <div class="hint-box">
-                        MVP note: this first version gives you the builder shell and ordered step rendering. Drag-and-drop, step settings, and creation actions come next.
+                        MVP note: this first version gives you the builder shell and ordered step rendering. Click Edit Step to open the step settings rail.
                     </div>
                 </div>
+                {{end}}
             </div>
+
         </div>
     </div>
 </body>
