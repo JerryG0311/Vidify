@@ -1228,6 +1228,74 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/funnels/add-video-step", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userEmail := getLoggedInUser(r)
+		if userEmail == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		funnelID := strings.TrimSpace(r.FormValue("funnel_id"))
+		if funnelID == "" {
+			http.Error(w, "missing funnel id", http.StatusBadRequest)
+			return
+		}
+
+		var ownerEmail string
+		err := db.QueryRow(`
+			SELECT user_id
+			FROM funnels
+			WHERE id = ?
+		`, funnelID).Scan(&ownerEmail)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.NotFound(w, r)
+				return
+			}
+			log.Printf("Add video step funnel lookup error for %s: %v", funnelID, err)
+			http.Error(w, "unable to load funnel", http.StatusInternalServerError)
+			return
+		}
+
+		if ownerEmail != userEmail {
+			http.NotFound(w, r)
+			return
+		}
+
+		nextPosition := 1
+		err = db.QueryRow(`
+			SELECT COALESCE(MAX(position), 0) + 1
+			FROM funnel_steps
+			WHERE funnel_id = ?
+		`, funnelID).Scan(&nextPosition)
+		if err != nil {
+			log.Printf("Add video step position lookup error for %s: %v", funnelID, err)
+			http.Error(w, "Unable to determine next step position", http.StatusInternalServerError)
+			return
+		}
+
+		stepID := fmt.Sprintf("step-%d", time.Now().UnixNano())
+
+		// Temporary hardcoded video
+		videoID := "vid-1773432484"
+
+		_, err = db.Exec(`
+			INSERT INTO funnel_steps (id, funnel_id, step_type, video_id, position)
+			VALUES (?, ?, ?, ?, ?)
+		`, stepID, funnelID, "video", videoID, nextPosition)
+		if err != nil {
+			log.Printf("Add video step insert error for %s: %v", funnelID, err)
+			http.Error(w, "unable to create video step", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/funnels/"+funnelID+"/builder", http.StatusSeeOther)
+	})
+
 	http.HandleFunc("/funnels/", func(w http.ResponseWriter, r *http.Request) {
 		userEmail := getLoggedInUser(r)
 		if userEmail == "" {

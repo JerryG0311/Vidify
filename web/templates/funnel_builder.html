@@ -536,6 +536,11 @@
                                 <p class="drop-zone-desc">
                                     Drag the next block here later. For now, this shows where the next part of the viewer journey will be added.
                                 </p>
+
+                                <form method="POST" action="/funnels/add-video-step" style="margin-top: 10px;">
+                                    <input type="hidden" name="funnel_id" value="{{.Funnel.ID}}">
+                                    <button class="btn btn-primary" type="submit">Add Video Step</button>
+                                </form>
                             </div>
                         </div>
                     {{else}}
@@ -545,6 +550,11 @@
                                 <p class="drop-zone-desc">
                                     Your funnel has no steps yet. The first step will usually be a video block, then you can continue the sequence below it.
                                 </p>
+
+                                <form method="POST" action="/funnels/add-video-step" style="margin-top: 10px;">
+                                    <input type="hidden" name="funnel_id" value="{{.Funnel.ID}}">
+                                    <button class="btn btn-primary" type="submit">Add First Video Step</button>
+                                </form>
                             </div>
                         </div>
                     {{end}}
